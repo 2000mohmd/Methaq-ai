@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/chat")({
       POST: async ({ request }) => {
         const token = request.headers.get("authorization")?.replace("Bearer ", "");
         if (!token) return new Response("Unauthorized", { status: 401 });
-        const sb = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_PUBLISHABLE_KEY!, {
+        const sb = createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_PUBLISHABLE_KEY"]!, {
           global: { headers: { Authorization: `Bearer ${token}` } },
           auth: { persistSession: false },
         });
@@ -45,7 +45,7 @@ export const Route = createFileRoute("/api/chat")({
         const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${process.env.LOVABLE_API_KEY}`,
+            Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({

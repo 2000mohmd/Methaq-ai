@@ -113,7 +113,7 @@ function ChatPage() {
       const { data: prof } = await supabase.from("profiles").select("organization_id").eq("id", uid).single();
       const { data: c, error } = await supabase
         .from("conversations")
-        .insert({ user_id: uid, title: content.slice(0, 60), jurisdiction: juris, organization_id: prof?.organization_id })
+        .insert({ user_id: uid, title: content.slice(0, 60), jurisdiction: juris, organization_id: prof?.organization_id ?? null })
         .select("id")
         .single();
       if (error) {

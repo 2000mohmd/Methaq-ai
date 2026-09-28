@@ -54,7 +54,7 @@ export function RecordModule({ table, title, fields, summary }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table]);
 
-  const save = async () => {
+  const save = async (): Promise<unknown> => {
     if (!orgId) return toast.error(ar ? "أكمل إعداد الحساب أولاً" : "Finish onboarding first");
     const payload: Record<string, unknown> = { organization_id: orgId };
     for (const f of fields) {
@@ -119,10 +119,10 @@ export function RecordModule({ table, title, fields, summary }: Props) {
             </thead>
             <tbody>
               {filtered.map((r) => (
-                <tr key={r.id as string} className="border-t border-border">
+                <tr key={r["id"] as string} className="border-t border-border">
                   {listFields.map((f) => <td key={f.key} className="px-4 py-3">{String(r[f.key] ?? "—")}</td>)}
                   <td className="px-2 text-end">
-                    <button onClick={() => remove(r.id as string)} aria-label="Delete"><Trash2 className="size-4 text-muted-foreground hover:text-destructive" /></button>
+                    <button onClick={() => remove(r["id"] as string)} aria-label="Delete"><Trash2 className="size-4 text-muted-foreground hover:text-destructive" /></button>
                   </td>
                 </tr>
               ))}
