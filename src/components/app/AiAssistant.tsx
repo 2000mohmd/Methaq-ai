@@ -39,7 +39,8 @@ export function AiAssistant({ open, onOpenChange, module, moduleAr, context, sug
       await streamAI([...msgs, userMsg].slice(-20), { mode: module }, (d) =>
         setMsgs((m) => {
           const copy = [...m];
-          copy[copy.length - 1] = { role: "assistant", content: copy[copy.length - 1].content + d };
+          const last = copy[copy.length - 1]!;
+          copy[copy.length - 1] = { role: "assistant", content: last.content + d };
           return copy;
         }),
       );
