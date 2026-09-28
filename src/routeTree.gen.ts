@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppBillingRouteImport } from './routes/app/billing'
 import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppChatRouteImport } from './routes/app/chat'
@@ -48,6 +49,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppBillingRoute = AppBillingRouteImport.update({
   id: '/billing',
@@ -145,10 +151,10 @@ export interface FileRoutesByFullPath {
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
   '/app/workflows': typeof AppWorkflowsRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/app/billing': typeof AppBillingRoute
@@ -166,6 +172,7 @@ export interface FileRoutesByTo {
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
   '/app/workflows': typeof AppWorkflowsRoute
+  '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -188,6 +195,7 @@ export interface FileRoutesById {
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
   '/app/workflows': typeof AppWorkflowsRoute
+  '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,10 +219,10 @@ export interface FileRouteTypes {
     | '/app/tasks'
     | '/app/time'
     | '/app/workflows'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/app'
     | '/auth'
     | '/onboarding'
     | '/app/billing'
@@ -232,6 +240,7 @@ export interface FileRouteTypes {
     | '/app/tasks'
     | '/app/time'
     | '/app/workflows'
+    | '/app'
   id:
     | '__root__'
     | '/'
@@ -253,6 +262,7 @@ export interface FileRouteTypes {
     | '/app/tasks'
     | '/app/time'
     | '/app/workflows'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -291,6 +301,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/app/billing': {
       id: '/app/billing'
@@ -416,6 +433,7 @@ interface AppRouteChildren {
   AppTasksRoute: typeof AppTasksRoute
   AppTimeRoute: typeof AppTimeRoute
   AppWorkflowsRoute: typeof AppWorkflowsRoute
+  AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -434,6 +452,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTasksRoute: AppTasksRoute,
   AppTimeRoute: AppTimeRoute,
   AppWorkflowsRoute: AppWorkflowsRoute,
+  AppIndexRoute: AppIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

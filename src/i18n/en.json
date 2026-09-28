@@ -89,6 +89,10 @@
   "app.comingSoon": "Not built yet",
   "app.emptyBody": "This module is part of the roadmap. The workspace, roles and data foundation are already in place.",
   "app.home": "Home",
+  "app.welcome": "Your workspace is ready",
+  "app.welcomeBody": "Chat and eFirm live behind one login. Start with the assistant, or open your matters.",
+  "app.open": "Open",
+  "app.disclaimer": "Mithaq supports legal work but is not a substitute for a licensed lawyer.",
 
   "common.language": "العربية",
   "common.loading": "Loading",

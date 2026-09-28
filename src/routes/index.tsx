@@ -88,7 +88,7 @@ function Landing() {
             </div>
           </div>
           <p className="max-w-md border-s-2 border-teal ps-4 text-sm leading-relaxed text-white/55">
-            {t("brand.rights")}
+            {t("brand.tagline2")}
           </p>
         </div>
       </section>
