@@ -55,6 +55,376 @@ export type Database = {
           },
         ]
       }
+      clients: {
+        Row: {
+          client_type: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          kyc_status: string | null
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          kyc_status?: string | null
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          kyc_status?: string | null
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clients_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          jurisdiction: string | null
+          organization_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jurisdiction?: string | null
+          organization_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jurisdiction?: string | null
+          organization_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      employees: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          organization_id: string
+          position: string | null
+          start_date: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          organization_id: string
+          position?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          organization_id?: string
+          position?: string | null
+          start_date?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hearings: {
+        Row: {
+          court: string | null
+          created_at: string
+          created_by: string | null
+          hearing_date: string | null
+          id: string
+          location: string | null
+          matter: string | null
+          notes: string | null
+          organization_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          court?: string | null
+          created_at?: string
+          created_by?: string | null
+          hearing_date?: string | null
+          id?: string
+          location?: string | null
+          matter?: string | null
+          notes?: string | null
+          organization_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          court?: string | null
+          created_at?: string
+          created_by?: string | null
+          hearing_date?: string | null
+          id?: string
+          location?: string | null
+          matter?: string | null
+          notes?: string | null
+          organization_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hearings_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount: number
+          client_name: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          due_date: string | null
+          id: string
+          number: string
+          organization_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          number: string
+          organization_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          due_date?: string | null
+          id?: string
+          number?: string
+          organization_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          organization_id: string
+          phone: string | null
+          source: string | null
+          stage: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          organization_id: string
+          phone?: string | null
+          source?: string | null
+          stage?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          organization_id?: string
+          phone?: string | null
+          source?: string | null
+          stage?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matters: {
+        Row: {
+          client_name: string | null
+          court: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          organization_id: string
+          practice_area: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_name?: string | null
+          court?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          organization_id: string
+          practice_area?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_name?: string | null
+          court?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          organization_id?: string
+          practice_area?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matters_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organizations: {
         Row: {
           account_type: Database["public"]["Enums"]["account_type"]
@@ -137,6 +507,100 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "profiles_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          due_date: string | null
+          id: string
+          matter: string | null
+          organization_id: string
+          priority: string | null
+          status: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          matter?: string | null
+          organization_id: string
+          priority?: string | null
+          status?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          due_date?: string | null
+          id?: string
+          matter?: string | null
+          organization_id?: string
+          priority?: string | null
+          status?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      time_entries: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          description: string
+          hours: number
+          id: string
+          matter: string | null
+          organization_id: string
+          rate: number | null
+          updated_at: string
+          work_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          description: string
+          hours?: number
+          id?: string
+          matter?: string | null
+          organization_id: string
+          rate?: number | null
+          updated_at?: string
+          work_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          hours?: number
+          id?: string
+          matter?: string | null
+          organization_id?: string
+          rate?: number | null
+          updated_at?: string
+          work_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
