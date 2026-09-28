@@ -9,6 +9,7 @@ import { LogoMark } from "@/components/brand/Logo";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { streamAI } from "@/lib/ai-stream";
 
 export const Route = createFileRoute("/app/chat")({
   head: () => ({ meta: [{ title: "Mithaq Chat — Legal AI" }] }),
@@ -25,43 +26,6 @@ const MODES = [
   { id: "due diligence", en: "Due diligence", ar: "العناية الواجبة" },
 ];
 const JURIS = ["Saudi Arabia", "UAE", "Qatar", "Kuwait", "Bahrain", "Oman", "Egypt", "Jordan", "Lebanon"];
-
-export async function streamAI(
-  messages: Msg[],
-  opts: { mode?: string; jurisdiction?: string },
-  onDelta: (s: string) => void,
-) {
-  const { data } = await supabase.auth.getSession();
-  const res = await fetch("/api/chat", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token}` },
-    body: JSON.stringify({ messages, ...opts }),
-  });
-  if (!res.ok || !res.body) throw new Error((await res.text()) || "AI error");
-  const reader = res.body.getReader();
-  const dec = new TextDecoder();
-  let buf = "";
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, { stream: true });
-    let i: number;
-    while ((i = buf.indexOf("\n")) !== -1) {
-      const line = buf.slice(0, i).replace(/\r$/, "");
-      buf = buf.slice(i + 1);
-      if (!line.startsWith("data: ")) continue;
-      const json = line.slice(6).trim();
-      if (json === "[DONE]") return;
-      try {
-        const c = JSON.parse(json).choices?.[0]?.delta?.content;
-        if (c) onDelta(c);
-      } catch {
-        buf = line + "\n" + buf;
-        break;
-      }
-    }
-  }
-}
 
 function ChatPage() {
   const { lang } = useI18n();

@@ -143,6 +143,59 @@ export type Database = {
           },
         ]
       }
+      documents: {
+        Row: {
+          analysis: string | null
+          created_at: string
+          created_by: string | null
+          extracted_text: string | null
+          id: string
+          matter: string | null
+          mime_type: string | null
+          name: string
+          organization_id: string
+          size_bytes: number | null
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          analysis?: string | null
+          created_at?: string
+          created_by?: string | null
+          extracted_text?: string | null
+          id?: string
+          matter?: string | null
+          mime_type?: string | null
+          name: string
+          organization_id: string
+          size_bytes?: number | null
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          analysis?: string | null
+          created_at?: string
+          created_by?: string | null
+          extracted_text?: string | null
+          id?: string
+          matter?: string | null
+          mime_type?: string | null
+          name?: string
+          organization_id?: string
+          size_bytes?: number | null
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employees: {
         Row: {
           created_at: string
@@ -333,6 +386,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "leads_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      library_items: {
+        Row: {
+          category: string | null
+          content: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          jurisdiction: string | null
+          organization_id: string
+          source_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          jurisdiction?: string | null
+          organization_id: string
+          source_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          jurisdiction?: string | null
+          organization_id?: string
+          source_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "library_items_organization_id_fkey"
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
