@@ -55,7 +55,7 @@ function DocumentsPage() {
   }, []);
 
   const upload = async (file: File) => {
-    if (!orgId) return toast.error(ar ? "أكمل إعداد الحساب أولاً" : "Finish onboarding first");
+    if (!orgId) { toast.error(ar ? "أكمل إعداد الحساب أولاً" : "Finish onboarding first"); return; }
     setUploading(true);
     try {
       const path = `${orgId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
@@ -83,7 +83,7 @@ function DocumentsPage() {
   };
 
   const analyze = async (a: (typeof ANALYSES)[number]) => {
-    if (!sel?.extracted_text) return toast.error(ar ? "لا يوجد نص قابل للتحليل" : "No readable text in this document");
+    if (!sel?.extracted_text) { toast.error(ar ? "لا يوجد نص قابل للتحليل" : "No readable text in this document"); return; }
     setAnalyzing(true);
     let acc = "";
     const doc = sel;
@@ -106,14 +106,14 @@ function DocumentsPage() {
 
   const download = async (d: Doc) => {
     const { data, error } = await supabase.storage.from("documents").createSignedUrl(d.storage_path, 60);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     window.open(data.signedUrl, "_blank");
   };
 
   const remove = async (d: Doc) => {
     await supabase.storage.from("documents").remove([d.storage_path]);
     const { error } = await supabase.from("documents").delete().eq("id", d.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (sel?.id === d.id) setSel(null);
     load();
   };
