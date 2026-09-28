@@ -13,6 +13,21 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as AppBillingRouteImport } from './routes/app/billing'
+import { Route as AppCalendarRouteImport } from './routes/app/calendar'
+import { Route as AppChatRouteImport } from './routes/app/chat'
+import { Route as AppClientsRouteImport } from './routes/app/clients'
+import { Route as AppDocumentsRouteImport } from './routes/app/documents'
+import { Route as AppEmailsRouteImport } from './routes/app/emails'
+import { Route as AppHrRouteImport } from './routes/app/hr'
+import { Route as AppKycRouteImport } from './routes/app/kyc'
+import { Route as AppLeadsRouteImport } from './routes/app/leads'
+import { Route as AppLibraryRouteImport } from './routes/app/library'
+import { Route as AppMattersRouteImport } from './routes/app/matters'
+import { Route as AppSettingsRouteImport } from './routes/app/settings'
+import { Route as AppTasksRouteImport } from './routes/app/tasks'
+import { Route as AppTimeRouteImport } from './routes/app/time'
+import { Route as AppWorkflowsRouteImport } from './routes/app/workflows'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,37 +49,215 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppBillingRoute = AppBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCalendarRoute = AppCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientsRoute = AppClientsRouteImport.update({
+  id: '/clients',
+  path: '/clients',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppDocumentsRoute = AppDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEmailsRoute = AppEmailsRouteImport.update({
+  id: '/emails',
+  path: '/emails',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHrRoute = AppHrRouteImport.update({
+  id: '/hr',
+  path: '/hr',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKycRoute = AppKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLeadsRoute = AppLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLibraryRoute = AppLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMattersRoute = AppMattersRouteImport.update({
+  id: '/matters',
+  path: '/matters',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTimeRoute = AppTimeRouteImport.update({
+  id: '/time',
+  path: '/time',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
+  id: '/workflows',
+  path: '/workflows',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/app/billing': typeof AppBillingRoute
+  '/app/calendar': typeof AppCalendarRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/clients': typeof AppClientsRoute
+  '/app/documents': typeof AppDocumentsRoute
+  '/app/emails': typeof AppEmailsRoute
+  '/app/hr': typeof AppHrRoute
+  '/app/kyc': typeof AppKycRoute
+  '/app/leads': typeof AppLeadsRoute
+  '/app/library': typeof AppLibraryRoute
+  '/app/matters': typeof AppMattersRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/tasks': typeof AppTasksRoute
+  '/app/time': typeof AppTimeRoute
+  '/app/workflows': typeof AppWorkflowsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/app/billing': typeof AppBillingRoute
+  '/app/calendar': typeof AppCalendarRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/clients': typeof AppClientsRoute
+  '/app/documents': typeof AppDocumentsRoute
+  '/app/emails': typeof AppEmailsRoute
+  '/app/hr': typeof AppHrRoute
+  '/app/kyc': typeof AppKycRoute
+  '/app/leads': typeof AppLeadsRoute
+  '/app/library': typeof AppLibraryRoute
+  '/app/matters': typeof AppMattersRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/tasks': typeof AppTasksRoute
+  '/app/time': typeof AppTimeRoute
+  '/app/workflows': typeof AppWorkflowsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/app': typeof AppRoute
+  '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
+  '/app/billing': typeof AppBillingRoute
+  '/app/calendar': typeof AppCalendarRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/clients': typeof AppClientsRoute
+  '/app/documents': typeof AppDocumentsRoute
+  '/app/emails': typeof AppEmailsRoute
+  '/app/hr': typeof AppHrRoute
+  '/app/kyc': typeof AppKycRoute
+  '/app/leads': typeof AppLeadsRoute
+  '/app/library': typeof AppLibraryRoute
+  '/app/matters': typeof AppMattersRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/tasks': typeof AppTasksRoute
+  '/app/time': typeof AppTimeRoute
+  '/app/workflows': typeof AppWorkflowsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/auth' | '/onboarding'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/onboarding'
+    | '/app/billing'
+    | '/app/calendar'
+    | '/app/chat'
+    | '/app/clients'
+    | '/app/documents'
+    | '/app/emails'
+    | '/app/hr'
+    | '/app/kyc'
+    | '/app/leads'
+    | '/app/library'
+    | '/app/matters'
+    | '/app/settings'
+    | '/app/tasks'
+    | '/app/time'
+    | '/app/workflows'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app' | '/auth' | '/onboarding'
-  id: '__root__' | '/' | '/app' | '/auth' | '/onboarding'
+  to:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/onboarding'
+    | '/app/billing'
+    | '/app/calendar'
+    | '/app/chat'
+    | '/app/clients'
+    | '/app/documents'
+    | '/app/emails'
+    | '/app/hr'
+    | '/app/kyc'
+    | '/app/leads'
+    | '/app/library'
+    | '/app/matters'
+    | '/app/settings'
+    | '/app/tasks'
+    | '/app/time'
+    | '/app/workflows'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/onboarding'
+    | '/app/billing'
+    | '/app/calendar'
+    | '/app/chat'
+    | '/app/clients'
+    | '/app/documents'
+    | '/app/emails'
+    | '/app/hr'
+    | '/app/kyc'
+    | '/app/leads'
+    | '/app/library'
+    | '/app/matters'
+    | '/app/settings'
+    | '/app/tasks'
+    | '/app/time'
+    | '/app/workflows'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AppRoute: typeof AppRoute
+  AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
 }
@@ -99,12 +292,155 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/billing': {
+      id: '/app/billing'
+      path: '/billing'
+      fullPath: '/app/billing'
+      preLoaderRoute: typeof AppBillingRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/calendar': {
+      id: '/app/calendar'
+      path: '/calendar'
+      fullPath: '/app/calendar'
+      preLoaderRoute: typeof AppCalendarRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/chat': {
+      id: '/app/chat'
+      path: '/chat'
+      fullPath: '/app/chat'
+      preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/clients': {
+      id: '/app/clients'
+      path: '/clients'
+      fullPath: '/app/clients'
+      preLoaderRoute: typeof AppClientsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/documents': {
+      id: '/app/documents'
+      path: '/documents'
+      fullPath: '/app/documents'
+      preLoaderRoute: typeof AppDocumentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/emails': {
+      id: '/app/emails'
+      path: '/emails'
+      fullPath: '/app/emails'
+      preLoaderRoute: typeof AppEmailsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/hr': {
+      id: '/app/hr'
+      path: '/hr'
+      fullPath: '/app/hr'
+      preLoaderRoute: typeof AppHrRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/kyc': {
+      id: '/app/kyc'
+      path: '/kyc'
+      fullPath: '/app/kyc'
+      preLoaderRoute: typeof AppKycRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/leads': {
+      id: '/app/leads'
+      path: '/leads'
+      fullPath: '/app/leads'
+      preLoaderRoute: typeof AppLeadsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/library': {
+      id: '/app/library'
+      path: '/library'
+      fullPath: '/app/library'
+      preLoaderRoute: typeof AppLibraryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/matters': {
+      id: '/app/matters'
+      path: '/matters'
+      fullPath: '/app/matters'
+      preLoaderRoute: typeof AppMattersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks': {
+      id: '/app/tasks'
+      path: '/tasks'
+      fullPath: '/app/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/time': {
+      id: '/app/time'
+      path: '/time'
+      fullPath: '/app/time'
+      preLoaderRoute: typeof AppTimeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/workflows': {
+      id: '/app/workflows'
+      path: '/workflows'
+      fullPath: '/app/workflows'
+      preLoaderRoute: typeof AppWorkflowsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppBillingRoute: typeof AppBillingRoute
+  AppCalendarRoute: typeof AppCalendarRoute
+  AppChatRoute: typeof AppChatRoute
+  AppClientsRoute: typeof AppClientsRoute
+  AppDocumentsRoute: typeof AppDocumentsRoute
+  AppEmailsRoute: typeof AppEmailsRoute
+  AppHrRoute: typeof AppHrRoute
+  AppKycRoute: typeof AppKycRoute
+  AppLeadsRoute: typeof AppLeadsRoute
+  AppLibraryRoute: typeof AppLibraryRoute
+  AppMattersRoute: typeof AppMattersRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppTasksRoute: typeof AppTasksRoute
+  AppTimeRoute: typeof AppTimeRoute
+  AppWorkflowsRoute: typeof AppWorkflowsRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppBillingRoute: AppBillingRoute,
+  AppCalendarRoute: AppCalendarRoute,
+  AppChatRoute: AppChatRoute,
+  AppClientsRoute: AppClientsRoute,
+  AppDocumentsRoute: AppDocumentsRoute,
+  AppEmailsRoute: AppEmailsRoute,
+  AppHrRoute: AppHrRoute,
+  AppKycRoute: AppKycRoute,
+  AppLeadsRoute: AppLeadsRoute,
+  AppLibraryRoute: AppLibraryRoute,
+  AppMattersRoute: AppMattersRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppTasksRoute: AppTasksRoute,
+  AppTimeRoute: AppTimeRoute,
+  AppWorkflowsRoute: AppWorkflowsRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AppRoute: AppRoute,
+  AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
 }
