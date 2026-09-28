@@ -67,6 +67,7 @@ export function RecordModule({ table, title, fields, summary }: Props) {
     setOpen(false);
     setForm({});
     load();
+    return null;
   };
 
   const remove = async (id: string) => {
