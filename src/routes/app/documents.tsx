@@ -8,7 +8,7 @@ import { HexPattern } from "@/components/brand/HexPattern";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
 import { cn } from "@/lib/utils";
-import { streamAI } from "./chat";
+import { streamAI } from "@/lib/ai-stream";
 
 export const Route = createFileRoute("/app/documents")({
   head: () => ({ meta: [{ title: "Documents — Mithaq eFirm" }] }),
