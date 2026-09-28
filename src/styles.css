@@ -189,15 +189,3 @@
   letter-spacing: 0.28em;
   font-weight: 600;
 }
-
-@utility hex-pattern {
-  background-color: var(--color-navy);
-  background-image: var(--pattern-hex);
-  background-size: 96px 96px;
-}
-
-@utility hex-pattern-light {
-  background-color: var(--color-navy-tint);
-  background-image: var(--pattern-hex-navy);
-  background-size: 96px 96px;
-}
