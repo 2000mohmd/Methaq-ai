@@ -6,6 +6,7 @@ import { LogoLockup, LogoMark } from "@/components/brand/Logo";
 import { HexPattern } from "@/components/brand/HexPattern";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useI18n } from "@/i18n";
+import { MarketingNav } from "@/components/MarketingLayout";
 import heroDesk from "@/assets/hero-desk.jpg";
 import columns from "@/assets/columns.jpg";
 
@@ -43,6 +44,7 @@ function Landing() {
             <LogoLockup tone="navy" className="hidden sm:inline-flex" />
             <LogoMark className="sm:hidden" />
           </Link>
+          <MarketingNav />
           <div className="flex items-center gap-2">
             <LanguageToggle />
             <Button variant="ghost" size="sm" asChild>
