@@ -86,6 +86,7 @@ export function RecordModule({ table, title, fields, summary }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold text-navy">{ar ? title.ar : title.en}</h1>
         <Input className="ms-auto w-56" placeholder={ar ? "بحث…" : "Search…"} value={q} onChange={(e) => setQ(e.target.value)} />
+        <Button variant="outline" onClick={() => setAiOpen(true)}><Sparkles className="size-4 text-teal" /> {ar ? "اسأل الذكاء الاصطناعي" : "Ask AI"}</Button>
         <Button onClick={() => setOpen(true)}><Plus className="size-4" /> {ar ? "إضافة" : "Add"}</Button>
       </div>
 
@@ -156,6 +157,19 @@ export function RecordModule({ table, title, fields, summary }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AiAssistant
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        module={title.en}
+        moduleAr={title.ar}
+        context={JSON.stringify(rows.slice(0, 40))}
+        suggestions={[
+          { en: `Summarize my ${title.en.toLowerCase()} and flag anything urgent`, ar: `لخّص ${title.ar} ونبّهني لأي أمر عاجل` },
+          { en: "What deadlines or follow-ups am I missing?", ar: "ما المواعيد أو المتابعات التي فاتتني؟" },
+          { en: "Draft a professional update I can send to a client", ar: "صغ رسالة مهنية يمكنني إرسالها لعميل" },
+        ]}
+      />
     </div>
   );
 }
