@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HexPattern } from "@/components/brand/HexPattern";
+import { AiAssistant } from "@/components/app/AiAssistant";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
 
@@ -33,6 +34,7 @@ export function RecordModule({ table, title, fields, summary }: Props) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -84,6 +86,7 @@ export function RecordModule({ table, title, fields, summary }: Props) {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold text-navy">{ar ? title.ar : title.en}</h1>
         <Input className="ms-auto w-56" placeholder={ar ? "بحث…" : "Search…"} value={q} onChange={(e) => setQ(e.target.value)} />
+        <Button variant="outline" onClick={() => setAiOpen(true)}><Sparkles className="size-4 text-teal" /> {ar ? "اسأل الذكاء الاصطناعي" : "Ask AI"}</Button>
         <Button onClick={() => setOpen(true)}><Plus className="size-4" /> {ar ? "إضافة" : "Add"}</Button>
       </div>
 
@@ -154,6 +157,19 @@ export function RecordModule({ table, title, fields, summary }: Props) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AiAssistant
+        open={aiOpen}
+        onOpenChange={setAiOpen}
+        module={title.en}
+        moduleAr={title.ar}
+        context={JSON.stringify(rows.slice(0, 40))}
+        suggestions={[
+          { en: `Summarize my ${title.en.toLowerCase()} and flag anything urgent`, ar: `لخّص ${title.ar} ونبّهني لأي أمر عاجل` },
+          { en: "What deadlines or follow-ups am I missing?", ar: "ما المواعيد أو المتابعات التي فاتتني؟" },
+          { en: "Draft a professional update I can send to a client", ar: "صغ رسالة مهنية يمكنني إرسالها لعميل" },
+        ]}
+      />
     </div>
   );
 }
