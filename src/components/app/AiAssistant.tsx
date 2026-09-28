@@ -95,7 +95,7 @@ export function AiAssistant({ open, onOpenChange, module, moduleAr, context, sug
                 {m.role === "user" ? (
                   m.content
                 ) : (
-                  <div className="prose prose-sm max-w-none prose-headings:text-navy prose-strong:text-navy">
+                  <div className="space-y-2 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-base [&_h2]:font-semibold [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:ps-5 [&_ul]:list-disc [&_ul]:ps-5 [&_strong]:font-semibold [&_strong]:text-navy [&_h1]:text-navy [&_h2]:text-navy [&_h3]:text-navy [&_hr]:border-border">
                     <ReactMarkdown>{m.content}</ReactMarkdown>
                   </div>
                 )}
