@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HexPattern } from "@/components/brand/HexPattern";
+import { AiAssistant } from "@/components/app/AiAssistant";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
 
@@ -33,6 +34,7 @@ export function RecordModule({ table, title, fields, summary }: Props) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
