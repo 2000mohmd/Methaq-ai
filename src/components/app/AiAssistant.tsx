@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
@@ -88,10 +89,16 @@ export function AiAssistant({ open, onOpenChange, module, moduleAr, context, sug
                 className={
                   m.role === "user"
                     ? "max-w-[85%] rounded-2xl bg-navy px-4 py-2.5 text-sm text-white"
-                    : "max-w-[95%] whitespace-pre-wrap text-sm leading-relaxed"
+                    : "max-w-[95%] text-sm leading-relaxed"
                 }
               >
-                {m.content}
+                {m.role === "user" ? (
+                  m.content
+                ) : (
+                  <div className="prose prose-sm max-w-none prose-headings:text-navy prose-strong:text-navy">
+                    <ReactMarkdown>{m.content}</ReactMarkdown>
+                  </div>
+                )}
                 {busy && i === msgs.length - 1 && m.role === "assistant" && (
                   <Loader2 className="mt-1 size-4 animate-spin text-teal" />
                 )}
