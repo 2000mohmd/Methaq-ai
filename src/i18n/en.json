@@ -4,7 +4,6 @@
   "brand.tagline": "Your Voice in the Legal Arena",
   "brand.tagline2": "Legal Wisdom, Strategic Counsel",
   "brand.rights": "I wish to remain silent. I want to speak to a lawyer. I do not consent to a search.",
-
   "nav.products": "Products",
   "nav.chat": "Mithaq Chat",
   "nav.efirm": "Mithaq eFirm",
@@ -13,7 +12,6 @@
   "nav.about": "About",
   "nav.signin": "Sign in",
   "nav.getStarted": "Get started",
-
   "home.heroKicker": "Legal AI operating system",
   "home.heroTitle": "Your Voice in the Legal Arena",
   "home.heroSubtitle": "One jurisdiction-aware legal AI for research, drafting and contract review, joined to a full practice management system. Built bilingual, Arabic and English, from the first line.",
@@ -26,7 +24,6 @@
   "home.about": "About Mithaq",
   "home.mission": "Mithaq has risen to the task of lawyers and arbitrators who built a foundation for legal justice with close balance, according to the highest standards of quality, high efficiency and full confidentiality.",
   "home.footerRights": "All rights reserved.",
-
   "auth.title": "Welcome to Mithaq",
   "auth.subtitle": "Sign in to your legal workspace.",
   "auth.signIn": "Sign in",
@@ -43,7 +40,6 @@
   "auth.resetSent": "Check your inbox for the reset link.",
   "auth.back": "Back to sign in",
   "auth.checkEmail": "Check your email to confirm your account.",
-
   "onboarding.title": "Set up your workspace",
   "onboarding.step": "Step",
   "onboarding.of": "of",
@@ -62,7 +58,6 @@
   "onboarding.next": "Continue",
   "onboarding.backStep": "Back",
   "onboarding.finish": "Enter workspace",
-
   "app.chat": "Chat",
   "app.workflows": "Workflows",
   "app.matters": "Legal matters",
@@ -93,8 +88,9 @@
   "app.welcomeBody": "Chat and eFirm live behind one login. Start with the assistant, or open your matters.",
   "app.open": "Open",
   "app.disclaimer": "Mithaq supports legal work but is not a substitute for a licensed lawyer.",
-
   "common.language": "العربية",
   "common.loading": "Loading",
-  "common.error": "Something went wrong"
+  "common.error": "Something went wrong",
+  "app.admin": "Admin console",
+  "app.portal": "Client portal"
 }

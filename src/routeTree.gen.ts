@@ -18,6 +18,7 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as AppIndexRouteImport } from './routes/app/index'
+import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppBillingRouteImport } from './routes/app/billing'
 import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppChatRouteImport } from './routes/app/chat'
@@ -29,6 +30,7 @@ import { Route as AppKycRouteImport } from './routes/app/kyc'
 import { Route as AppLeadsRouteImport } from './routes/app/leads'
 import { Route as AppLibraryRouteImport } from './routes/app/library'
 import { Route as AppMattersRouteImport } from './routes/app/matters'
+import { Route as AppPortalRouteImport } from './routes/app/portal'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppTasksRouteImport } from './routes/app/tasks'
 import { Route as AppTimeRouteImport } from './routes/app/time'
@@ -77,6 +79,11 @@ const ApiChatRoute = ApiChatRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBillingRoute = AppBillingRouteImport.update({
@@ -134,6 +141,11 @@ const AppMattersRoute = AppMattersRouteImport.update({
   path: '/matters',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPortalRoute = AppPortalRouteImport.update({
+  id: '/portal',
+  path: '/portal',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -164,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/security': typeof SecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/chat': typeof AppChatRoute
@@ -175,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
+  '/app/portal': typeof AppPortalRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
@@ -189,6 +203,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/security': typeof SecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/chat': typeof AppChatRoute
@@ -200,6 +215,7 @@ export interface FileRoutesByTo {
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
+  '/app/portal': typeof AppPortalRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
@@ -216,6 +232,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/security': typeof SecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
   '/app/chat': typeof AppChatRoute
@@ -227,6 +244,7 @@ export interface FileRoutesById {
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
+  '/app/portal': typeof AppPortalRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
@@ -244,6 +262,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/security'
     | '/api/chat'
+    | '/app/admin'
     | '/app/billing'
     | '/app/calendar'
     | '/app/chat'
@@ -255,6 +274,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
+    | '/app/portal'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
@@ -269,6 +289,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/security'
     | '/api/chat'
+    | '/app/admin'
     | '/app/billing'
     | '/app/calendar'
     | '/app/chat'
@@ -280,6 +301,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
+    | '/app/portal'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
@@ -295,6 +317,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/security'
     | '/api/chat'
+    | '/app/admin'
     | '/app/billing'
     | '/app/calendar'
     | '/app/chat'
@@ -306,6 +329,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
+    | '/app/portal'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
@@ -389,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/billing': {
       id: '/app/billing'
       path: '/billing'
@@ -466,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMattersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/portal': {
+      id: '/app/portal'
+      path: '/portal'
+      fullPath: '/app/portal'
+      preLoaderRoute: typeof AppPortalRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/settings': {
       id: '/app/settings'
       path: '/settings'
@@ -498,6 +536,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppBillingRoute: typeof AppBillingRoute
   AppCalendarRoute: typeof AppCalendarRoute
   AppChatRoute: typeof AppChatRoute
@@ -509,6 +548,7 @@ interface AppRouteChildren {
   AppLeadsRoute: typeof AppLeadsRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppMattersRoute: typeof AppMattersRoute
+  AppPortalRoute: typeof AppPortalRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTasksRoute: typeof AppTasksRoute
   AppTimeRoute: typeof AppTimeRoute
@@ -517,6 +557,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppBillingRoute: AppBillingRoute,
   AppCalendarRoute: AppCalendarRoute,
   AppChatRoute: AppChatRoute,
@@ -528,6 +569,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeadsRoute: AppLeadsRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppMattersRoute: AppMattersRoute,
+  AppPortalRoute: AppPortalRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTasksRoute: AppTasksRoute,
   AppTimeRoute: AppTimeRoute,
