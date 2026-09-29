@@ -61,7 +61,7 @@ function Emails() {
     }
     setSending(true);
     try {
-      await sendEmail({
+      const res = await sendEmail({
         data: {
           to: form.to.trim(),
           subject: form.subject.trim(),
@@ -69,6 +69,11 @@ function Emails() {
           from: form.from.trim() || undefined,
         },
       });
+      if (!res.ok) {
+        toast.error(res.error);
+        load();
+        return;
+      }
       toast.success(ar ? "تم إرسال الرسالة" : "Email sent");
       setOpen(false);
       setForm(EMPTY);
