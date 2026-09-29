@@ -95,11 +95,25 @@ function AppShell() {
         navigate({ to: "/auth" });
         return;
       }
-      const loaded = await fetchProfile(user.id).catch(() => null);
+      let loaded = await fetchProfile(user.id).catch(() => null);
       if (!active) return;
-      if (loaded && !loaded.onboarded && !window.location.pathname.startsWith("/app/portal")) {
-        navigate({ to: "/onboarding" });
-        return;
+      if (loaded && !loaded.onboarded) {
+        // A new user may have pending invitations (team member or client):
+        // claiming them joins the firm and marks the profile onboarded.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: claimed } = await (supabase as any).rpc("claim_invitations");
+        if ((claimed as number | null) && (claimed as number) > 0) {
+          loaded = await fetchProfile(user.id).catch(() => null);
+          if (loaded?.onboarded) {
+            navigate({ to: "/app/portal" });
+            return;
+          }
+        }
+        if (!active) return;
+        if (loaded && !loaded.onboarded && !window.location.pathname.startsWith("/app/portal")) {
+          navigate({ to: "/onboarding" });
+          return;
+        }
       }
       setProfile(loaded);
       setChecking(false);
