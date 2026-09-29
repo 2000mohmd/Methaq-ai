@@ -37,8 +37,11 @@ function Emails() {
   const [form, setForm] = useState(EMPTY);
   const [aiOpen, setAiOpen] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = supabase as any;
+
   const load = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("sent_emails")
       .select("id,to_address,subject,status,error,created_at")
       .order("created_at", { ascending: false });
@@ -53,7 +56,8 @@ function Emails() {
 
   const send = async () => {
     if (!form.to.trim() || !form.subject.trim() || !form.body.trim()) {
-      return toast.error(ar ? "أكمل الحقول المطلوبة" : "Fill in recipient, subject and message");
+      toast.error(ar ? "أكمل الحقول المطلوبة" : "Fill in recipient, subject and message");
+      return;
     }
     setSending(true);
     try {
@@ -77,7 +81,7 @@ function Emails() {
   };
 
   const remove = async (id: string) => {
-    const { error } = await supabase.from("sent_emails").delete().eq("id", id);
+    const { error } = await db.from("sent_emails").delete().eq("id", id);
     if (error) toast.error(error.message);
     load();
   };

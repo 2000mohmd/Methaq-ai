@@ -42,12 +42,14 @@ function Admin() {
     const org = p?.organization_id ?? null;
     setOrgId(org);
     if (!org) return setIsAdmin(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
     const [{ data: r }, { data: m }, { data: o }, { data: l }, { data: iv }] = await Promise.all([
       supabase.from("user_roles").select("id,user_id,role").eq("organization_id", org),
       supabase.from("profiles").select("id,email,full_name").eq("organization_id", org),
       supabase.from("organizations").select("name").eq("id", org).single(),
       supabase.from("audit_logs").select("id,action,resource,user_id,created_at").eq("organization_id", org).order("created_at", { ascending: false }).limit(100),
-      supabase.from("invitations").select("id,email,role,status").eq("organization_id", org).order("created_at", { ascending: false }),
+      db.from("invitations").select("id,email,role,status").eq("organization_id", org).order("created_at", { ascending: false }),
     ]);
     const rs = (r ?? []) as Role[];
     setRoles(rs);

@@ -13,7 +13,7 @@ const emailSchema = z.object({
 });
 
 async function sendViaResend(
-  payload: { to: string; subject: string; text: string; from?: string },
+  payload: { to: string; subject: string; text: string; from?: string | undefined },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ ok: boolean; providerId: string | null; error: string | null }> {
   const apiKey = process.env["LOVABLE_API_KEY"];
