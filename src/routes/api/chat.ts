@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/chat")({
           const words = Array.from(new Set(last.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2)));
           const { data: items } = await sb.from("library_items").select("title, jurisdiction, category, source_url, content").limit(300);
           const scored = (items ?? [])
-            .map((it: Record<string, string | null>) => {
+            .map((it: { title: string | null; jurisdiction: string | null; category: string | null; source_url: string | null; content: string | null }) => {
               const hay = `${it.title ?? ""} ${it.content ?? ""} ${it.jurisdiction ?? ""}`.toLowerCase();
               let s = words.reduce((a, w) => a + (hay.includes(w) ? 1 : 0), 0);
               if (body.jurisdiction && it.jurisdiction === body.jurisdiction) s += 0.5;
