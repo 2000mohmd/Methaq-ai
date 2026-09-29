@@ -86,6 +86,7 @@ function AppShell() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [checking, setChecking] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -116,6 +117,14 @@ function AppShell() {
         }
       }
       setProfile(loaded);
+      // Portal-only users (invited clients) get a reduced menu.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: roleRows } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      const roles = (roleRows ?? []) as { role: string }[];
+      if (roles.length > 0 && roles.every((r) => r.role === "client")) setIsClient(true);
       setChecking(false);
     });
     return () => {
@@ -152,7 +161,10 @@ function AppShell() {
         </div>
 
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-          {GROUPS.map((group) => (
+          {(isClient
+            ? [{ label: "app.groupMore", items: [{ to: "/app/portal", key: "app.portal", icon: UserRound }] as const }]
+            : GROUPS
+          ).map((group) => (
             <div key={group.label}>
               <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-sidebar-foreground/45 uppercase">
                 {t(group.label)}
