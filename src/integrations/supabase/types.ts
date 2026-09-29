@@ -761,6 +761,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_portal_client: {
+        Args: { _client_name: string; _org: string }
+        Returns: boolean
+      }
     }
     Enums: {
       account_type: "lawyer" | "law_firm" | "in_house" | "individual"
