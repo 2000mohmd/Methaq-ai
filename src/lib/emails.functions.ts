@@ -98,7 +98,7 @@ export const sendEmail = createServerFn({ method: "POST" })
 
 const inviteSchema = z.object({
   email: z.string().email(),
-  role: z.enum(["user", "admin"]),
+  role: z.enum(["user", "admin", "client"]),
   origin: z.string().url(),
 });
 
@@ -122,14 +122,20 @@ export const sendInvite = createServerFn({ method: "POST" })
     const firmName: string = org?.name ?? "your firm";
 
     const signupUrl = `${data.origin}/auth?mode=signup&email=${encodeURIComponent(data.email)}`;
+    const isClient = data.role === "client";
     const text = [
-      `You have been invited to join ${firmName} on Mithaq Alarabia as ${data.role === "admin" ? "an administrator" : "a team member"}.`,
+      isClient
+        ? `${firmName} has invited you to its secure client portal on Mithaq Alarabia, where you can follow your matters and invoices.`
+        : `You have been invited to join ${firmName} on Mithaq Alarabia as ${data.role === "admin" ? "an administrator" : "a team member"}.`,
       "",
       "Create your account here:",
       signupUrl,
       "",
+      isClient ? "After signing up, open your client portal to see your matters and invoices." : "",
       "— Mithaq Alarabia",
-      "دُعِمت للانضمام إلى " + firmName + " على ميثاق العربية. أنشئ حسابك من الرابط أعلاه.",
+      isClient
+        ? "دعاك " + firmName + " إلى بوابة العملاء الآمنة على ميثاق العربية لمتابعة قضاياك وفواتيرك. أنشئ حسابك من الرابط أعلاه."
+        : "دُعيت للانضمام إلى " + firmName + " على ميثاق العربية. أنشئ حسابك من الرابط أعلاه.",
     ].join("\n");
 
     const result = await sendViaResend({
