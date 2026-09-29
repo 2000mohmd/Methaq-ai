@@ -35,7 +35,7 @@ const WORKFLOWS: WF[] = [
       { key: "b", en: "Receiving party", ar: "الطرف المتلقي" },
       { key: "purpose", en: "Purpose & term", ar: "الغرض والمدة", long: true },
     ],
-    prompt: (v) => `Draft a complete non-disclosure agreement between ${v.a} (disclosing) and ${v.b} (receiving). Purpose and term: ${v.purpose}. Include governing law and dispute resolution clauses.`,
+    prompt: (v) => `Draft a complete non-disclosure agreement between ${v["a"]} (disclosing) and ${v["b"]} (receiving). Purpose and term: ${v["purpose"]}. Include governing law and dispute resolution clauses.`,
   },
   {
     id: "demand", icon: Mail, en: "Demand letter", ar: "خطاب مطالبة",
@@ -45,7 +45,7 @@ const WORKFLOWS: WF[] = [
       { key: "amount", en: "Amount / obligation", ar: "المبلغ أو الالتزام" },
       { key: "facts", en: "Facts", ar: "الوقائع", long: true },
     ],
-    prompt: (v) => `Draft a formal legal demand letter to ${v.to} regarding: ${v.amount}. Facts: ${v.facts}. Set a clear deadline and state consequences of non-compliance.`,
+    prompt: (v) => `Draft a formal legal demand letter to ${v["to"]} regarding: ${v["amount"]}. Facts: ${v["facts"]}. Set a clear deadline and state consequences of non-compliance.`,
   },
   {
     id: "review", icon: ShieldAlert, en: "Contract risk checklist", ar: "قائمة مخاطر العقد",
@@ -54,7 +54,7 @@ const WORKFLOWS: WF[] = [
       { key: "side", en: "You represent", ar: "تمثّل الطرف" },
       { key: "text", en: "Contract text", ar: "نص العقد", long: true },
     ],
-    prompt: (v) => `Acting for ${v.side}, review this contract and output a markdown table of risks (clause, risk, severity, suggested redline), then a short summary.\n\n${v.text}`,
+    prompt: (v) => `Acting for ${v["side"]}, review this contract and output a markdown table of risks (clause, risk, severity, suggested redline), then a short summary.\n\n${v["text"]}`,
   },
   {
     id: "memo", icon: ScrollText, en: "Legal memo", ar: "مذكرة قانونية",
@@ -63,7 +63,7 @@ const WORKFLOWS: WF[] = [
       { key: "q", en: "Legal question", ar: "المسألة القانونية" },
       { key: "facts", en: "Facts", ar: "الوقائع", long: true },
     ],
-    prompt: (v) => `Write a legal memorandum in IRAC format on: ${v.q}. Facts: ${v.facts}. Cite relevant laws where possible and flag uncertainty.`,
+    prompt: (v) => `Write a legal memorandum in IRAC format on: ${v["q"]}. Facts: ${v["facts"]}. Cite relevant laws where possible and flag uncertainty.`,
   },
   {
     id: "hearing", icon: Gavel, en: "Hearing preparation", ar: "التحضير للجلسة",
@@ -72,7 +72,7 @@ const WORKFLOWS: WF[] = [
       { key: "case", en: "Case summary", ar: "ملخص القضية", long: true },
       { key: "court", en: "Court", ar: "المحكمة" },
     ],
-    prompt: (v) => `Prepare a hearing brief for ${v.court}. Case: ${v.case}. Include key arguments, anticipated counter-arguments, likely questions from the judge, and an evidence checklist.`,
+    prompt: (v) => `Prepare a hearing brief for ${v["court"]}. Case: ${v["case"]}. Include key arguments, anticipated counter-arguments, likely questions from the judge, and an evidence checklist.`,
   },
 ];
 
