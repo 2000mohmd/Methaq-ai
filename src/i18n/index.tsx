@@ -30,7 +30,10 @@ type I18nValue = {
   toggleLang: () => void;
 };
 
-const I18nContext = createContext<I18nValue | null>(null);
+// Keep one context instance across hot reloads (e.g. when en.json/ar.json change),
+// otherwise the mounted provider and consumers end up on different contexts.
+const g = globalThis as unknown as { __mithaqI18nCtx?: React.Context<I18nValue | null> };
+const I18nContext = (g.__mithaqI18nCtx ??= createContext<I18nValue | null>(null));
 
 const EASTERN = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
 
