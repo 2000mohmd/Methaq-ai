@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ShieldCheck, Trash2 } from "lucide-react";
+import { ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
+import { sendInvite } from "@/lib/emails.functions";
 
 export const Route = createFileRoute("/app/admin")({
   head: () => ({ meta: [{ title: "Admin console — Mithaq" }] }),
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/app/admin")({
 type Member = { id: string; email: string | null; full_name: string | null };
 type Role = { id: string; user_id: string; role: string };
 type Log = { id: string; action: string; resource: string | null; user_id: string | null; created_at: string };
+type Invite = { id: string; email: string; role: string; status: string };
 
 function Admin() {
   const { lang } = useI18n();
@@ -27,6 +29,10 @@ function Admin() {
   const [members, setMembers] = useState<Member[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [logs, setLogs] = useState<Log[]>([]);
+  const [invites, setInvites] = useState<Invite[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState("user");
+  const [inviting, setInviting] = useState(false);
 
   async function load() {
     const { data: u } = await supabase.auth.getUser();
@@ -36,17 +42,21 @@ function Admin() {
     const org = p?.organization_id ?? null;
     setOrgId(org);
     if (!org) return setIsAdmin(false);
-    const [{ data: r }, { data: m }, { data: o }, { data: l }] = await Promise.all([
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = supabase as any;
+    const [{ data: r }, { data: m }, { data: o }, { data: l }, { data: iv }] = await Promise.all([
       supabase.from("user_roles").select("id,user_id,role").eq("organization_id", org),
       supabase.from("profiles").select("id,email,full_name").eq("organization_id", org),
       supabase.from("organizations").select("name").eq("id", org).single(),
       supabase.from("audit_logs").select("id,action,resource,user_id,created_at").eq("organization_id", org).order("created_at", { ascending: false }).limit(100),
+      db.from("invitations").select("id,email,role,status").eq("organization_id", org).order("created_at", { ascending: false }),
     ]);
     const rs = (r ?? []) as Role[];
     setRoles(rs);
     setMembers((m ?? []) as Member[]);
     setOrgName(o?.name ?? "");
     setLogs((l ?? []) as Log[]);
+    setInvites((iv ?? []) as Invite[]);
     setIsAdmin(rs.some((x) => x.user_id === u.user!.id && (x.role === "owner" || x.role === "admin")));
   }
 
@@ -63,6 +73,21 @@ function Admin() {
     const { error } = await supabase.from("user_roles").delete().eq("id", id);
     if (error) toast.error(error.message);
     load();
+  }
+
+  async function invite() {
+    if (!inviteEmail.trim()) return;
+    setInviting(true);
+    try {
+      await sendInvite({ data: { email: inviteEmail.trim(), role: inviteRole, origin: window.location.origin } });
+      toast.success(ar ? "تم إرسال الدعوة" : "Invitation sent");
+      setInviteEmail("");
+      load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message.slice(0, 300) : ar ? "فشلت الدعوة" : "Invite failed");
+    } finally {
+      setInviting(false);
+    }
   }
 
   if (isAdmin === null) return <div className="p-10 text-sm text-muted-foreground">…</div>;
@@ -110,6 +135,43 @@ function Admin() {
             ))}
           </tbody>
         </table>
+
+        <h3 className="mt-5 font-medium text-navy">{ar ? "دعوة عضو جديد" : "Invite a new member"}</h3>
+        <div className="mt-2 flex max-w-lg flex-wrap gap-2">
+          <Input className="min-w-52 flex-1" type="email" placeholder={ar ? "البريد الإلكتروني" : "Email"}
+            value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
+          <select className="h-10 rounded-lg border border-input bg-background px-3" value={inviteRole}
+            onChange={(e) => setInviteRole(e.target.value)}>
+            <option value="user">{ar ? "عضو" : "Member"}</option>
+            <option value="admin">{ar ? "مسؤول" : "Admin"}</option>
+          </select>
+          <Button onClick={invite} disabled={inviting}>
+            <UserPlus className="size-4" />
+            {inviting ? (ar ? "جارٍ الإرسال…" : "Sending…") : ar ? "دعوة" : "Invite"}
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {ar
+            ? "تُرسل الدعوة بالبريد الإلكتروني، وينشئ العضو حسابه من الرابط الموجود فيها."
+            : "The invitation is sent by email; the new member creates their account from the link inside it."}
+        </p>
+        {invites.length > 0 && (
+          <table className="mt-4 w-full text-sm">
+            <tbody>
+              {invites.map((iv) => (
+                <tr key={iv.id} className="border-t border-border">
+                  <td className="py-2">{iv.email}</td>
+                  <td className="py-2 text-muted-foreground">{iv.role}</td>
+                  <td className="py-2">
+                    <span className={"rounded-full px-2 py-0.5 text-xs " + (iv.status === "sent" ? "bg-teal/10 text-teal" : "bg-destructive/10 text-destructive")}>
+                      {iv.status === "sent" ? (ar ? "أُرسلت" : "Sent") : ar ? "فشلت" : "Failed"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </section>
 
       <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
