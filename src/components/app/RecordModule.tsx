@@ -25,9 +25,10 @@ type Props = {
   title: { en: string; ar: string };
   fields: Field[];
   summary?: (rows: Record<string, unknown>[]) => { en: string; ar: string; value: string }[];
+  rowAction?: { en: string; ar: string; onClick: (row: Record<string, unknown>) => void; hidden?: (row: Record<string, unknown>) => boolean };
 };
 
-export function RecordModule({ table, title, fields, summary }: Props) {
+export function RecordModule({ table, title, fields, summary, rowAction }: Props) {
   const { lang } = useI18n();
   const ar = lang === "ar";
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
@@ -126,7 +127,17 @@ export function RecordModule({ table, title, fields, summary }: Props) {
                 <tr key={r["id"] as string} className="border-t border-border">
                   {listFields.map((f) => <td key={f.key} className="px-4 py-3">{String(r[f.key] ?? "—")}</td>)}
                   <td className="px-2 text-end">
-                    <button onClick={() => remove(r["id"] as string)} aria-label="Delete"><Trash2 className="size-4 text-muted-foreground hover:text-destructive" /></button>
+                    <div className="flex items-center justify-end gap-2">
+                      {rowAction && !rowAction.hidden?.(r) && (
+                        <button
+                          onClick={() => rowAction.onClick(r)}
+                          className="text-xs font-medium text-teal hover:underline"
+                        >
+                          {ar ? rowAction.ar : rowAction.en}
+                        </button>
+                      )}
+                      <button onClick={() => remove(r["id"] as string)} aria-label="Delete"><Trash2 className="size-4 text-muted-foreground hover:text-destructive" /></button>
+                    </div>
                   </td>
                 </tr>
               ))}

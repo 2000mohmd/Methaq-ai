@@ -23,8 +23,10 @@ function Portal() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       setEmail(u.user?.email ?? "");
-      const { data: prof } = await supabase.from("profiles").select("organization_id").eq("id", u.user?.id ?? "").maybeSingle();
-      if (prof?.organization_id) return; // firm members: portal only shows client-owned records
+      // Claim any pending invitations addressed to this email (joins the firm,
+      // links the client record) before loading portal data.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).rpc("claim_invitations");
       const [{ data: m }, { data: i }] = await Promise.all([
         supabase.from("matters").select("id,title,practice_area,court,status"),
         supabase.from("invoices").select("id,number,amount,currency,due_date,status"),

@@ -86,6 +86,7 @@ function AppShell() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [checking, setChecking] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -95,13 +96,35 @@ function AppShell() {
         navigate({ to: "/auth" });
         return;
       }
-      const loaded = await fetchProfile(user.id).catch(() => null);
+      let loaded = await fetchProfile(user.id).catch(() => null);
       if (!active) return;
-      if (loaded && !loaded.onboarded && !window.location.pathname.startsWith("/app/portal")) {
-        navigate({ to: "/onboarding" });
-        return;
+      if (loaded && !loaded.onboarded) {
+        // A new user may have pending invitations (team member or client):
+        // claiming them joins the firm and marks the profile onboarded.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: claimed } = await (supabase as any).rpc("claim_invitations");
+        if ((claimed as number | null) && (claimed as number) > 0) {
+          loaded = await fetchProfile(user.id).catch(() => null);
+          if (loaded?.onboarded) {
+            navigate({ to: "/app/portal" });
+            return;
+          }
+        }
+        if (!active) return;
+        if (loaded && !loaded.onboarded && !window.location.pathname.startsWith("/app/portal")) {
+          navigate({ to: "/onboarding" });
+          return;
+        }
       }
       setProfile(loaded);
+      // Portal-only users (invited clients) get a reduced menu.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: roleRows } = await (supabase as any)
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id);
+      const roles = (roleRows ?? []) as { role: string }[];
+      if (roles.length > 0 && roles.every((r) => r.role === "client")) setIsClient(true);
       setChecking(false);
     });
     return () => {
@@ -138,7 +161,10 @@ function AppShell() {
         </div>
 
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
-          {GROUPS.map((group) => (
+          {(isClient
+            ? [{ label: "app.groupMore", items: [{ to: "/app/portal", key: "app.portal", icon: UserRound }] as const }]
+            : GROUPS
+          ).map((group) => (
             <div key={group.label}>
               <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-sidebar-foreground/45 uppercase">
                 {t(group.label)}
