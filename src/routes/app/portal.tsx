@@ -23,12 +23,11 @@ function Portal() {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       setEmail(u.user?.email ?? "");
-      const { data: clients } = await supabase.from("clients").select("name").ilike("email", u.user?.email ?? "__none__");
-      const names = (clients ?? []).map((c) => c.name);
-      if (!names.length) return;
+      const { data: prof } = await supabase.from("profiles").select("organization_id").eq("id", u.user?.id ?? "").maybeSingle();
+      if (prof?.organization_id) return; // firm members: portal only shows client-owned records
       const [{ data: m }, { data: i }] = await Promise.all([
-        supabase.from("matters").select("id,title,practice_area,court,status").in("client_name", names),
-        supabase.from("invoices").select("id,number,amount,currency,due_date,status").in("client_name", names),
+        supabase.from("matters").select("id,title,practice_area,court,status"),
+        supabase.from("invoices").select("id,number,amount,currency,due_date,status"),
       ]);
       setMatters((m ?? []) as Row[]);
       setInvoices((i ?? []) as Row[]);

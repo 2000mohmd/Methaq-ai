@@ -73,6 +73,8 @@ const GROUPS = [
     label: "app.groupMore",
     items: [
       { to: "/app/library", key: "app.library", icon: LibraryBig },
+      { to: "/app/portal", key: "app.portal", icon: UserRound },
+      { to: "/app/admin", key: "app.admin", icon: ShieldCheck },
       { to: "/app/settings", key: "app.settings", icon: Settings },
     ],
   },
@@ -95,7 +97,7 @@ function AppShell() {
       }
       const loaded = await fetchProfile(user.id).catch(() => null);
       if (!active) return;
-      if (loaded && !loaded.onboarded) {
+      if (loaded && !loaded.onboarded && !window.location.pathname.startsWith("/app/portal")) {
         navigate({ to: "/onboarding" });
         return;
       }
