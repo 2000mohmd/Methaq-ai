@@ -17,6 +17,7 @@ import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiOcrRouteImport } from './routes/api/ocr'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
 import { Route as AppBillingRouteImport } from './routes/app/billing'
@@ -74,6 +75,11 @@ const SecurityRoute = SecurityRouteImport.update({
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOcrRoute = ApiOcrRouteImport.update({
+  id: '/api/ocr',
+  path: '/api/ocr',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/security': typeof SecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/ocr': typeof ApiOcrRoute
   '/app/admin': typeof AppAdminRoute
   '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/security': typeof SecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/ocr': typeof ApiOcrRoute
   '/app/admin': typeof AppAdminRoute
   '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/security': typeof SecurityRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/ocr': typeof ApiOcrRoute
   '/app/admin': typeof AppAdminRoute
   '/app/billing': typeof AppBillingRoute
   '/app/calendar': typeof AppCalendarRoute
@@ -262,6 +271,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/security'
     | '/api/chat'
+    | '/api/ocr'
     | '/app/admin'
     | '/app/billing'
     | '/app/calendar'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/security'
     | '/api/chat'
+    | '/api/ocr'
     | '/app/admin'
     | '/app/billing'
     | '/app/calendar'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/security'
     | '/api/chat'
+    | '/api/ocr'
     | '/app/admin'
     | '/app/billing'
     | '/app/calendar'
@@ -346,6 +358,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   SecurityRoute: typeof SecurityRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiOcrRoute: typeof ApiOcrRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -404,6 +417,13 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ocr': {
+      id: '/api/ocr'
+      path: '/api/ocr'
+      fullPath: '/api/ocr'
+      preLoaderRoute: typeof ApiOcrRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app/': {
@@ -588,6 +608,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   SecurityRoute: SecurityRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiOcrRoute: ApiOcrRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

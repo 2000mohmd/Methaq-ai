@@ -30,10 +30,37 @@ export const Route = createFileRoute("/api/chat")({
         if (!Array.isArray(body.messages) || body.messages.length === 0 || body.messages.length > 60) {
           return new Response("Bad request", { status: 400 });
         }
+        // Pull the most relevant items from the firm's legal library (RLS keeps it org-scoped).
+        let libraryCtx = "";
+        try {
+          const last = [...body.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+          const words = Array.from(new Set(last.toLowerCase().split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 2)));
+          const { data: items } = await sb.from("library_items").select("title, jurisdiction, category, source_url, content").limit(300);
+          const scored = (items ?? [])
+            .map((it: { title: string | null; jurisdiction: string | null; category: string | null; source_url: string | null; content: string | null }) => {
+              const hay = `${it.title ?? ""} ${it.content ?? ""} ${it.jurisdiction ?? ""}`.toLowerCase();
+              let s = words.reduce((a, w) => a + (hay.includes(w) ? 1 : 0), 0);
+              if (body.jurisdiction && it.jurisdiction === body.jurisdiction) s += 0.5;
+              return { it, s };
+            })
+            .filter((x) => x.s >= 1)
+            .sort((a, b) => b.s - a.s)
+            .slice(0, 5);
+          if (scored.length) {
+            libraryCtx =
+              "\n\nFIRM LIBRARY — relevant items saved by this firm. Prefer them when relevant and cite them by title:\n" +
+              scored
+                .map(({ it }, i) => `[${i + 1}] ${it.title} (${it.jurisdiction ?? "—"}, ${it.category ?? "—"})${it.source_url ? ` ${it.source_url}` : ""}\n${(it.content ?? "").slice(0, 3000)}`)
+                .join("\n\n");
+          }
+        } catch {
+          /* library is optional */
+        }
         const system =
           SYSTEM +
           (body.jurisdiction ? `\nPrimary jurisdiction: ${body.jurisdiction}.` : "") +
-          (body.mode ? `\nTask mode: ${body.mode}.` : "");
+          (body.mode ? `\nTask mode: ${body.mode}.` : "") +
+          libraryCtx;
 
         await sb.from("audit_logs").insert({
           user_id: userData.user.id,

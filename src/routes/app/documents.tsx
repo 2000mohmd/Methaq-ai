@@ -122,7 +122,7 @@ function DocumentsPage() {
     <div className="p-6 sm:p-10">
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-semibold text-navy">{ar ? "المستندات" : "Documents"}</h1>
-        <input ref={fileRef} type="file" hidden accept=".pdf,.docx,.txt,.md"
+        <input ref={fileRef} type="file" hidden accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
         <Button className="ms-auto" onClick={() => fileRef.current?.click()} disabled={uploading}>
           {uploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
