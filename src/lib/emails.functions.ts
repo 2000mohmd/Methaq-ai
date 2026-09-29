@@ -49,6 +49,20 @@ async function sendViaResend(
   return { ok: true, providerId, error: null };
 }
 
+function friendlyError(raw: string | null): string {
+  const s = raw ?? "";
+  if (s.includes("verify a domain") || s.includes("testing emails")) {
+    return "Your sending domain isn't verified yet, so emails can only go to the account owner's address. Verify your domain in Resend to email anyone.";
+  }
+  try {
+    const msg = JSON.parse(s.replace(/^\d+:\s*/, ""))?.message;
+    if (msg) return String(msg).slice(0, 300);
+  } catch {
+    // ignore
+  }
+  return "Sending failed. Please try again.";
+}
+
 export const sendEmail = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => emailSchema.parse(data))
@@ -78,8 +92,8 @@ export const sendEmail = createServerFn({ method: "POST" })
       });
     }
 
-    if (!result.ok) throw new Error(`Email failed [${result.error}]`);
-    return { ok: true as const, id: result.providerId };
+    if (!result.ok) return { ok: false as const, id: null, error: friendlyError(result.error) };
+    return { ok: true as const, id: result.providerId, error: null };
   });
 
 const inviteSchema = z.object({
@@ -142,6 +156,6 @@ export const sendInvite = createServerFn({ method: "POST" })
       resource: data.email,
     });
 
-    if (!result.ok) throw new Error(`Invitation failed [${result.error}]`);
-    return { ok: true as const };
+    if (!result.ok) return { ok: false as const, error: friendlyError(result.error) };
+    return { ok: true as const, error: null };
   });

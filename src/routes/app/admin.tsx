@@ -79,7 +79,12 @@ function Admin() {
     if (!inviteEmail.trim()) return;
     setInviting(true);
     try {
-      await sendInvite({ data: { email: inviteEmail.trim(), role: inviteRole, origin: window.location.origin } });
+      const res = await sendInvite({ data: { email: inviteEmail.trim(), role: inviteRole, origin: window.location.origin } });
+      if (!res.ok) {
+        toast.error(res.error);
+        load();
+        return;
+      }
       toast.success(ar ? "تم إرسال الدعوة" : "Invitation sent");
       setInviteEmail("");
       load();
