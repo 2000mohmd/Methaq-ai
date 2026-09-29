@@ -68,6 +68,7 @@ export type Database = {
           organization_id: string
           phone: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           client_type?: string | null
@@ -81,6 +82,7 @@ export type Database = {
           organization_id: string
           phone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           client_type?: string | null
@@ -94,6 +96,7 @@ export type Database = {
           organization_id?: string
           phone?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -833,6 +836,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_invitations: { Args: never; Returns: number }
       current_org_id: { Args: never; Returns: string }
       has_org_role: {
         Args: {
