@@ -80,6 +80,19 @@ const GROUPS = [
   },
 ] as const;
 
+// Individuals only see personal pages, not the firm-management modules.
+const INDIVIDUAL_GROUPS = [
+  {
+    label: "app.groupChat",
+    items: [
+      { to: "/app/chat", key: "app.chat", icon: MessageSquare },
+      { to: "/app/workflows", key: "app.workflows", icon: Sparkles },
+      { to: "/app/library", key: "app.library", icon: LibraryBig },
+      { to: "/app/settings", key: "app.settings", icon: Settings },
+    ],
+  },
+] as const;
+
 function AppShell() {
   const { t } = useI18n();
   const navigate = useNavigate();
@@ -146,10 +159,10 @@ function AppShell() {
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex h-screen overflow-hidden bg-background">
       <aside
         className={cn(
-          "fixed inset-y-0 z-50 flex w-72 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0",
+          "fixed inset-y-0 z-50 flex w-72 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-transform lg:static lg:h-screen lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full",
           "lg:rtl:translate-x-0",
         )}
@@ -163,7 +176,9 @@ function AppShell() {
         <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
           {(isClient
             ? [{ label: "app.groupMore", items: [{ to: "/app/portal", key: "app.portal", icon: UserRound }] as const }]
-            : GROUPS
+            : profile?.account_type === "individual"
+              ? INDIVIDUAL_GROUPS
+              : GROUPS
           ).map((group) => (
             <div key={group.label}>
               <p className="px-3 pb-2 text-[10px] tracking-[0.18em] text-sidebar-foreground/45 uppercase">
@@ -208,8 +223,8 @@ function AppShell() {
         />
       )}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur sm:px-6">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur sm:px-6">
           <Button
             variant="ghost"
             size="icon"

@@ -47,7 +47,7 @@ function ChatPage() {
     loadConvs();
   }, []);
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
+    endRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [msgs]);
 
   const open = async (id: string) => {
@@ -112,7 +112,7 @@ function ChatPage() {
     : ["What are the termination rules under Saudi labour law?", "Draft a mutual NDA", "Review this clause for risks"];
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       <aside className="hidden w-64 shrink-0 flex-col border-e border-border bg-muted/30 md:flex">
         <div className="p-3">
           <Button className="w-full" onClick={() => { setActive(null); setMsgs([]); }}>

@@ -67,6 +67,7 @@ function Onboarding() {
   const [firmName, setFirmName] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const isIndividual = accountType === "individual";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -85,28 +86,33 @@ function Onboarding() {
       const user = sessionData.session?.user;
       if (!user) throw new Error("No session");
 
-      const { data: org, error: orgError } = await supabase
-        .from("organizations")
-        .insert({
-          name: firmName || (user.email ?? "Workspace"),
-          account_type: accountType,
-          jurisdictions: selected,
-          default_language: lang,
-          created_by: user.id,
-        })
-        .select()
-        .single();
-      if (orgError) throw orgError;
+      // Individuals get a personal account: no organization, no owner role.
+      let orgId: string | null = null;
+      if (!isIndividual) {
+        const { data: org, error: orgError } = await supabase
+          .from("organizations")
+          .insert({
+            name: firmName || (user.email ?? "Workspace"),
+            account_type: accountType,
+            jurisdictions: selected,
+            default_language: lang,
+            created_by: user.id,
+          })
+          .select()
+          .single();
+        if (orgError) throw orgError;
+        orgId = org.id;
 
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert({ user_id: user.id, organization_id: org.id, role: "owner" });
-      if (roleError) throw roleError;
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: user.id, organization_id: org.id, role: "owner" });
+        if (roleError) throw roleError;
+      }
 
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          organization_id: org.id,
+          organization_id: orgId,
           account_type: accountType,
           jurisdictions: selected,
           language: lang,
@@ -125,6 +131,12 @@ function Onboarding() {
   }
 
   const steps = 4;
+  // Individuals skip the firm-name step (1).
+  const go = (dir: 1 | -1) =>
+    setStep((s) => {
+      const next = s + dir;
+      return isIndividual && next === 1 ? next + dir : Math.max(0, next);
+    });
 
   return (
     <div className="relative min-h-screen bg-navy-tint">
@@ -256,13 +268,13 @@ function Onboarding() {
           <div className="mt-6 flex justify-between">
             <Button
               variant="ghost"
-              onClick={() => setStep((s) => Math.max(0, s - 1))}
+              onClick={() => go(-1)}
               disabled={step === 0}
             >
               {t("onboarding.backStep")}
             </Button>
             {step < steps - 1 ? (
-              <Button onClick={() => setStep((s) => s + 1)}>{t("onboarding.next")}</Button>
+              <Button onClick={() => go(1)}>{t("onboarding.next")}</Button>
             ) : (
               <Button variant="teal" onClick={finish} disabled={busy}>
                 {t("onboarding.finish")}
