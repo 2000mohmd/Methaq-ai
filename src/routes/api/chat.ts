@@ -116,18 +116,9 @@ export const Route = createFileRoute("/api/chat")({
             : ok.length > 1
               ? "Council: all models relied on the same sources."
               : "⚠ Only one council model responded.";
-          const text = `${head}
-
-` + ok.map((r, i) => `## Model ${i + 1} (${r.model})
-${r.v.text}`).join("
-
-");
+          const text = `${head}\n\n` + ok.map((r, i) => `## Model ${i + 1} (${r.model})\n${r.v.text}`).join("\n\n");
           await sb.from("audit_logs").insert({ user_id: uid, action: "ai.council", resource: "chat", metadata: { models: ok.map((r) => r.model), disagreement: diff } });
-          return new Response(`data: ${JSON.stringify({ mithaq_final: text })}
-
-data: [DONE]
-
-`, { headers: { "Content-Type": "text/event-stream" } });
+          return new Response(`data: ${JSON.stringify({ mithaq_final: text })}\n\ndata: [DONE]\n\n`, { headers: { "Content-Type": "text/event-stream" } });
         }
 
         const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
