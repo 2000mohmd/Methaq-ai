@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
   Bell,
@@ -87,6 +87,7 @@ const INDIVIDUAL_GROUPS = [
     items: [
       { to: "/app/chat", key: "app.chat", icon: MessageSquare },
       { to: "/app/workflows", key: "app.workflows", icon: Sparkles },
+      { to: "/app/documents", key: "app.documents", icon: FolderOpen },
       { to: "/app/library", key: "app.library", icon: LibraryBig },
       { to: "/app/settings", key: "app.settings", icon: Settings },
     ],
@@ -144,6 +145,14 @@ function AppShell() {
       active = false;
     };
   }, [navigate]);
+
+  // Individuals can't open firm-management pages by typing the URL.
+  const pathname = useLocation({ select: (l) => l.pathname });
+  const individual = profile?.account_type === "individual";
+  const allowed = INDIVIDUAL_GROUPS[0].items.some((i) => pathname.startsWith(i.to)) || pathname === "/app" || pathname === "/app/";
+  useEffect(() => {
+    if (!checking && individual && !allowed) navigate({ to: "/app/chat" });
+  }, [checking, individual, allowed, navigate]);
 
   async function signOut() {
     await supabase.auth.signOut();

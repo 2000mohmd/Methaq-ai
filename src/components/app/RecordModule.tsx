@@ -36,6 +36,7 @@ export function RecordModule({ table, title, fields, summary, rowAction }: Props
   const [form, setForm] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
   const [aiOpen, setAiOpen] = useState(false);
+  const [ready, setReady] = useState(false);
   const [orgId, setOrgId] = useState<string | null>(null);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,12 +54,14 @@ export function RecordModule({ table, title, fields, summary, rowAction }: Props
       if (!data.user) return;
       const { data: p } = await supabase.from("profiles").select("organization_id").eq("id", data.user.id).single();
       setOrgId(p?.organization_id ?? null);
+      setReady(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table]);
 
   const save = async (): Promise<unknown> => {
-    if (!orgId) return toast.error(ar ? "أكمل إعداد الحساب أولاً" : "Finish onboarding first");
+    if (!ready) return null;
+    // Personal accounts have no organization: rows are owned by the user (organization_id null).
     const payload: Record<string, unknown> = { organization_id: orgId };
     for (const f of fields) {
       const v = form[f.key];

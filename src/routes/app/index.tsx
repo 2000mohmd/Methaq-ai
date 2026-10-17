@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Building2, MessageSquare } from "lucide-react";
 
 import { HexPattern } from "@/components/brand/HexPattern";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { fetchProfile } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/app/")({
   component: Workspace,
@@ -11,6 +14,12 @@ export const Route = createFileRoute("/app/")({
 
 function Workspace() {
   const { t } = useI18n();
+  const [individual, setIndividual] = useState(false);
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (data.user) setIndividual((await fetchProfile(data.user.id).catch(() => null))?.account_type === "individual");
+    });
+  }, []);
 
   return (
     <div className="p-6 sm:p-10">
@@ -34,6 +43,7 @@ function Workspace() {
             <Link to="/app/chat">{t("app.open")}</Link>
           </Button>
         </article>
+        {!individual && (
         <article className="rounded-2xl border border-border bg-card p-7 shadow-soft">
           <Building2 className="size-6 text-teal" />
           <h2 className="mt-4 text-lg font-semibold text-navy">{t("app.matters")}</h2>
@@ -44,6 +54,7 @@ function Workspace() {
             <Link to="/app/matters">{t("app.open")}</Link>
           </Button>
         </article>
+        )}
       </div>
 
       <p className="mt-8 text-xs leading-relaxed text-muted-foreground">

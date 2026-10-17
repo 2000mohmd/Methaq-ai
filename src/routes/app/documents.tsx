@@ -37,6 +37,7 @@ function DocumentsPage() {
   const [docs, setDocs] = useState<Doc[]>([]);
   const [sel, setSel] = useState<Doc | null>(null);
   const [orgId, setOrgId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -51,14 +52,15 @@ function DocumentsPage() {
       if (!data.user) return;
       const { data: p } = await supabase.from("profiles").select("organization_id").eq("id", data.user.id).single();
       setOrgId(p?.organization_id ?? null);
+      setUserId(data.user.id);
     });
   }, []);
 
   const upload = async (file: File) => {
-    if (!orgId) { toast.error(ar ? "أكمل إعداد الحساب أولاً" : "Finish onboarding first"); return; }
+    if (!userId) return;
     setUploading(true);
     try {
-      const path = `${orgId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
+      const path = `${orgId ?? userId}/${crypto.randomUUID()}-${file.name.replace(/[^\w.\-]/g, "_")}`;
       const { error: upErr } = await supabase.storage.from("documents").upload(path, file);
       if (upErr) throw upErr;
       let text = "";
