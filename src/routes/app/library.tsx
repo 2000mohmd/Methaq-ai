@@ -6,6 +6,7 @@ const FIELDS: Field[] = [
   { key: "title", en: "Title", ar: "العنوان", required: true },
   { key: "jurisdiction", en: "Jurisdiction", ar: "الاختصاص", type: "select", options: ["Saudi Arabia", "UAE", "Qatar", "Kuwait", "Bahrain", "Oman", "Egypt", "Jordan", "Lebanon"] },
   { key: "category", en: "Type", ar: "النوع", type: "select", options: ["law", "regulation", "judgment", "template", "article"] },
+  { key: "status", en: "Status", ar: "الحالة", type: "select", options: ["in_force", "amended", "repealed"] },
   { key: "source_url", en: "Source link", ar: "رابط المصدر" },
   { key: "content", en: "Text / notes", ar: "النص / ملاحظات", list: false },
 ];

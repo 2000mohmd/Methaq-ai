@@ -6,6 +6,7 @@ export async function streamAI(
   messages: Msg[],
   opts: { mode?: string; jurisdiction?: string },
   onDelta: (s: string) => void,
+  onFinal?: (verified: string) => void,
 ) {
   const { data } = await supabase.auth.getSession();
   const res = await fetch("/api/chat", {
@@ -29,7 +30,9 @@ export async function streamAI(
       const json = line.slice(6).trim();
       if (json === "[DONE]") return;
       try {
-        const c = JSON.parse(json).choices?.[0]?.delta?.content;
+        const j = JSON.parse(json);
+        if (typeof j.mithaq_final === "string") onFinal?.(j.mithaq_final);
+        const c = j.choices?.[0]?.delta?.content;
         if (c) onDelta(c);
       } catch {
         buf = line + "\n" + buf;

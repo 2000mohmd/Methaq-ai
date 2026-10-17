@@ -94,10 +94,18 @@ function ChatPage() {
     await supabase.from("messages").insert({ conversation_id: convId, user_id: uid, role: "user", content });
     let acc = "";
     try {
-      await streamAI(history, { mode, jurisdiction: juris }, (d) => {
-        acc += d;
-        setMsgs([...history, { role: "assistant", content: acc }]);
-      });
+      await streamAI(
+        history,
+        { mode, jurisdiction: juris },
+        (d) => {
+          acc += d;
+          setMsgs([...history, { role: "assistant", content: acc }]);
+        },
+        (verified) => {
+          acc = verified;
+          setMsgs([...history, { role: "assistant", content: acc }]);
+        },
+      );
       await supabase.from("messages").insert({ conversation_id: convId, user_id: uid, role: "assistant", content: acc });
       await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", convId);
     } catch (e) {
