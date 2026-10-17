@@ -44,6 +44,12 @@ export function AiAssistant({ open, onOpenChange, module, moduleAr, context, sug
           copy[copy.length - 1] = { role: "assistant", content: last.content + d };
           return copy;
         }),
+        (verified) =>
+          setMsgs((m) => {
+            const copy = [...m];
+            copy[copy.length - 1] = { role: "assistant", content: verified };
+            return copy;
+          }),
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "AI error");

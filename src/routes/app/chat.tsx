@@ -24,6 +24,7 @@ const MODES = [
   { id: "drafting", en: "Drafting", ar: "صياغة" },
   { id: "contract review", en: "Contract review", ar: "مراجعة عقود" },
   { id: "due diligence", en: "Due diligence", ar: "العناية الواجبة" },
+  { id: "council", en: "High-stakes (council)", ar: "مجلس النماذج (حرج)" },
 ];
 const JURIS = ["Saudi Arabia", "UAE", "Qatar", "Kuwait", "Bahrain", "Oman", "Egypt", "Jordan", "Lebanon"];
 

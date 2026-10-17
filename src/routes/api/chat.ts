@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-import { chunkByArticle, rank, verifyAnswer, type Chunk, type Source } from "@/lib/legal/legal";
+import { chunkByArticle, councilDisagreement, expandReferences, rank, verifyAnswer, type Chunk, type Source } from "@/lib/legal/legal";
 
 const SYSTEM = `You are Mithaq, a careful, jurisdiction-aware legal AI assistant for lawyers and individuals in the Arab world (GCC, Egypt, Jordan, Lebanon and beyond).
 - Answer in the user's language (Arabic or English).
@@ -59,7 +59,7 @@ export const Route = createFileRoute("/api/chat")({
               sourceUrl: (it["source_url"] as string | null) ?? null,
             })),
           );
-          sources = rank(last, chunks, 6, body.jurisdiction ?? null);
+          sources = expandReferences(rank(last, chunks, 6, body.jurisdiction ?? null), chunks);
         } catch {
           /* library is optional */
         }
@@ -86,6 +86,49 @@ export const Route = createFileRoute("/api/chat")({
           resource: "chat",
           metadata: { mode: body.mode ?? "research", jurisdiction: body.jurisdiction ?? null, sources: sources.map((x) => `${x.title}#${x.ref}`) },
         });
+
+        // Council mode: same grounded prompt to several models, citations verified per model, disagreement surfaced.
+        if (body.mode === "council") {
+          const models = ["google/gemini-2.5-pro", "openai/gpt-5", "google/gemini-3-flash-preview"];
+          const msgs = [{ role: "system", content: system }, ...body.messages.slice(-30)];
+          const runs = await Promise.all(
+            models.map(async (model) => {
+              try {
+                const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+                  method: "POST",
+                  headers: { Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`, "Content-Type": "application/json" },
+                  body: JSON.stringify({ model, messages: msgs }),
+                });
+                if (!r.ok) return null;
+                const j = await r.json();
+                return { model, v: verifyAnswer(String(j.choices?.[0]?.message?.content ?? ""), sources) };
+              } catch {
+                return null;
+              }
+            }),
+          );
+          const ok = runs.filter((x): x is NonNullable<typeof x> => x !== null);
+          if (!ok.length) return new Response("AI error", { status: 500 });
+          const cited = ok.map((r) => new Set([...r.v.text.matchAll(/\[S(\d+)\]/g)].map((m) => Number(m[1]))));
+          const diff = councilDisagreement(cited);
+          const head = diff.length
+            ? `⚠ Council disagreement: models cite different sources (${diff.map((i) => `[S${i}]`).join(" ")}). A lawyer must resolve this.`
+            : ok.length > 1
+              ? "Council: all models relied on the same sources."
+              : "⚠ Only one council model responded.";
+          const text = `${head}
+
+` + ok.map((r, i) => `## Model ${i + 1} (${r.model})
+${r.v.text}`).join("
+
+");
+          await sb.from("audit_logs").insert({ user_id: uid, action: "ai.council", resource: "chat", metadata: { models: ok.map((r) => r.model), disagreement: diff } });
+          return new Response(`data: ${JSON.stringify({ mithaq_final: text })}
+
+data: [DONE]
+
+`, { headers: { "Content-Type": "text/event-stream" } });
+        }
 
         const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",

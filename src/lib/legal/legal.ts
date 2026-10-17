@@ -123,3 +123,57 @@ export function verifyAnswer(answer: string, sources: Source[]): Verification {
   if (notes.length) text += `\n\n---\n${notes.join("\n")}`;
   return { text, grounded: sources.length > 0, stripped, repealed, unverifiedArticles, validCitations: cited.size };
 }
+
+/** One hop along the citation graph: pull in articles that a retrieved article refers to (same instrument). */
+export function expandReferences(hits: Source[], all: Chunk[], max = 8): Source[] {
+  const out = [...hits];
+  for (const h of hits) {
+    for (const n of articleNumbers(h.text)) {
+      if (out.length >= max) return out;
+      if (n === h.ref || out.some((o) => o.title === h.title && o.ref === n)) continue;
+      const hit = all.find((c) => c.title === h.title && c.ref === n);
+      if (hit) out.push({ ...hit, id: out.length + 1 });
+    }
+  }
+  return out;
+}
+
+/** Council mode: which sources did each model cite? Disagreement is surfaced, never silently resolved. */
+export function councilDisagreement(citedPerModel: Set<number>[]): number[] {
+  const all = new Set(citedPerModel.flatMap((s) => [...s]));
+  return [...all].filter((id) => !citedPerModel.every((s) => s.has(id))).sort((a, b) => a - b);
+}
+
+// ---- Gold-set scoring -------------------------------------------------------------------
+
+export type GoldEntry = {
+  id: string;
+  practice_area: string;
+  question: string;
+  expected: { title: string; ref: string }[]; // citations a lawyer says must be retrieved
+  status: "draft" | "in_review" | "approved";
+  authored_by: string;
+  reviewed_by: string;
+};
+
+export function validateGold(e: GoldEntry): string[] {
+  const errs: string[] = [];
+  if (!e.id || !e.question) errs.push("id/question missing");
+  if (!e.expected?.length) errs.push("expected citations missing");
+  if (e.status === "approved" && (!e.reviewed_by || e.reviewed_by === e.authored_by)) errs.push("approved needs a second lawyer's sign-off");
+  return errs;
+}
+
+/** Retrieval recall@k over approved entries only. */
+export function scoreRetrieval(gold: GoldEntry[], corpus: Chunk[], k = 5) {
+  const approved = gold.filter((g) => g.status === "approved");
+  const misses: string[] = [];
+  let hit = 0;
+  for (const g of approved) {
+    const got = rank(g.question, corpus, k);
+    const ok = g.expected.every((x) => got.some((s) => s.title === x.title && s.ref === x.ref));
+    if (ok) hit++;
+    else misses.push(g.id);
+  }
+  return { total: approved.length, recall: approved.length ? hit / approved.length : 0, misses };
+}
