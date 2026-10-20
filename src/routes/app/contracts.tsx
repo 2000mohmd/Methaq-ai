@@ -154,13 +154,13 @@ ${details}`;
     const res = savedId
       ? await supabase.from("contracts").update(row).eq("id", savedId).select("id").single()
       : await supabase.from("contracts").insert({ ...row, created_by: user.id, organization_id: prof?.organization_id ?? null }).select("id").single();
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) { toast.error(res.error.message); return; }
     setSavedId(res.data.id); toast.success(ar ? "تم حفظ العقد" : "Contract saved"); load();
   }
 
   async function remove(id: string) {
     const { error } = await supabase.from("contracts").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     if (id === savedId) setSavedId(null);
     load();
   }
