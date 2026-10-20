@@ -24,6 +24,7 @@ import { Route as AppBillingRouteImport } from './routes/app/billing'
 import { Route as AppCalendarRouteImport } from './routes/app/calendar'
 import { Route as AppChatRouteImport } from './routes/app/chat'
 import { Route as AppClientsRouteImport } from './routes/app/clients'
+import { Route as AppContractsRouteImport } from './routes/app/contracts'
 import { Route as AppDocumentsRouteImport } from './routes/app/documents'
 import { Route as AppEmailsRouteImport } from './routes/app/emails'
 import { Route as AppHrRouteImport } from './routes/app/hr'
@@ -112,6 +113,11 @@ const AppClientsRoute = AppClientsRouteImport.update({
   path: '/clients',
   getParentRoute: () => AppRoute,
 } as any)
+const AppContractsRoute = AppContractsRouteImport.update({
+  id: '/contracts',
+  path: '/contracts',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDocumentsRoute = AppDocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/app/calendar': typeof AppCalendarRoute
   '/app/chat': typeof AppChatRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/contracts': typeof AppContractsRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/emails': typeof AppEmailsRoute
   '/app/hr': typeof AppHrRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/app/calendar': typeof AppCalendarRoute
   '/app/chat': typeof AppChatRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/contracts': typeof AppContractsRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/emails': typeof AppEmailsRoute
   '/app/hr': typeof AppHrRoute
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/app/calendar': typeof AppCalendarRoute
   '/app/chat': typeof AppChatRoute
   '/app/clients': typeof AppClientsRoute
+  '/app/contracts': typeof AppContractsRoute
   '/app/documents': typeof AppDocumentsRoute
   '/app/emails': typeof AppEmailsRoute
   '/app/hr': typeof AppHrRoute
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/chat'
     | '/app/clients'
+    | '/app/contracts'
     | '/app/documents'
     | '/app/emails'
     | '/app/hr'
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/chat'
     | '/app/clients'
+    | '/app/contracts'
     | '/app/documents'
     | '/app/emails'
     | '/app/hr'
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/app/calendar'
     | '/app/chat'
     | '/app/clients'
+    | '/app/contracts'
     | '/app/documents'
     | '/app/emails'
     | '/app/hr'
@@ -468,6 +480,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/contracts': {
+      id: '/app/contracts'
+      path: '/contracts'
+      fullPath: '/app/contracts'
+      preLoaderRoute: typeof AppContractsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/documents': {
       id: '/app/documents'
       path: '/documents'
@@ -561,6 +580,7 @@ interface AppRouteChildren {
   AppCalendarRoute: typeof AppCalendarRoute
   AppChatRoute: typeof AppChatRoute
   AppClientsRoute: typeof AppClientsRoute
+  AppContractsRoute: typeof AppContractsRoute
   AppDocumentsRoute: typeof AppDocumentsRoute
   AppEmailsRoute: typeof AppEmailsRoute
   AppHrRoute: typeof AppHrRoute
@@ -582,6 +602,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCalendarRoute: AppCalendarRoute,
   AppChatRoute: AppChatRoute,
   AppClientsRoute: AppClientsRoute,
+  AppContractsRoute: AppContractsRoute,
   AppDocumentsRoute: AppDocumentsRoute,
   AppEmailsRoute: AppEmailsRoute,
   AppHrRoute: AppHrRoute,

@@ -19,6 +19,7 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  FileSignature,
   Timer,
   UserRound,
   Users,
@@ -49,6 +50,7 @@ const GROUPS = [
   {
     label: "app.groupChat",
     items: [
+      { to: "/app/contracts", key: "app.contracts", icon: FileSignature },
       { to: "/app/chat", key: "app.chat", icon: MessageSquare },
       { to: "/app/workflows", key: "app.workflows", icon: Sparkles },
     ],
@@ -85,6 +87,7 @@ const INDIVIDUAL_GROUPS = [
   {
     label: "app.groupChat",
     items: [
+      { to: "/app/contracts", key: "app.contracts", icon: FileSignature },
       { to: "/app/chat", key: "app.chat", icon: MessageSquare },
       { to: "/app/workflows", key: "app.workflows", icon: Sparkles },
       { to: "/app/documents", key: "app.documents", icon: FolderOpen },
