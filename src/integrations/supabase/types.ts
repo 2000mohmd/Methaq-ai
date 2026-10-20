@@ -108,6 +108,45 @@ export type Database = {
           },
         ]
       }
+      contracts: {
+        Row: {
+          body: string
+          contract_type: string
+          created_at: string
+          created_by: string
+          id: string
+          inputs: Json
+          language: string
+          organization_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          contract_type: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          inputs?: Json
+          language?: string
+          organization_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          contract_type?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          inputs?: Json
+          language?: string
+          organization_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           created_at: string
