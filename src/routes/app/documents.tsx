@@ -72,7 +72,7 @@ function DocumentsPage() {
       }
       const { data, error } = await supabase
         .from("documents")
-        .insert({ organization_id: orgId, name: file.name, storage_path: path, mime_type: file.type, size_bytes: file.size, extracted_text: text })
+        .insert({ organization_id: orgId as string, name: file.name, storage_path: path, mime_type: file.type, size_bytes: file.size, extracted_text: text })
         .select("*")
         .single();
       if (error) throw error;
