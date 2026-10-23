@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Briefcase, Check, Copy, FileSignature, Handshake, Loader2, Printer, Save, Sparkles, Trash2 } from "lucide-react";
+import { Briefcase, Check, Copy, Download, FileSignature, Handshake, Loader2, Printer, Save, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { downloadDocx, loadLetterhead } from "@/lib/docx-export";
 import { streamAI } from "@/lib/ai-stream";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
@@ -171,6 +172,10 @@ ${details}`;
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  async function exportWord() {
+    await downloadDocx({ title: tpl.en, markdown: out, letterhead: await loadLetterhead(), lang: outLang === "en" ? "en" : "ar" }, tpl.en.replace(/\s+/g, "-"));
+  }
+
   function print() {
     const w = window.open("", "_blank");
     if (!w) return;
@@ -263,6 +268,7 @@ ${details}`;
                 <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(out); toast.success(ar ? "تم النسخ" : "Copied"); }}>
                   <Copy className="size-4" /> {ar ? "نسخ" : "Copy"}
                 </Button>
+                <Button size="sm" variant="ghost" disabled={busy} onClick={exportWord}><Download className="size-4" /> {ar ? "Word (.docx)" : "Word (.docx)"}</Button>
                 <Button size="sm" variant="ghost" disabled={busy} onClick={print}><Printer className="size-4" /> {ar ? "طباعة / PDF" : "Print / PDF"}</Button>
               </div>
               <div id="contract-output" dir={outLang === "en" ? "ltr" : "rtl"}

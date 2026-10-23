@@ -9,6 +9,7 @@ import { fetchProfile, type Profile } from "@/hooks/useAuth";
 import { useI18n, type Lang, type Numerals } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import type { Letterhead } from "@/lib/docx-export";
 
 export const Route = createFileRoute("/app/settings")({
   head: () => ({ meta: [{ title: "Settings — Mithaq" }] }),
@@ -24,6 +25,7 @@ function Settings() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [lh, setLh] = useState<Letterhead>({});
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -31,6 +33,8 @@ function Settings() {
       const p = await fetchProfile(data.user.id).catch(() => null);
       setProfile(p);
       setName(p?.full_name ?? "");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setLh((((p as any)?.letterhead ?? {}) as Letterhead));
     });
   }, []);
 
@@ -39,7 +43,7 @@ function Settings() {
     setBusy(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: name, language: lang, numerals })
+      .update({ full_name: name, language: lang, numerals, letterhead: lh } as never)
       .eq("id", profile.id);
     setBusy(false);
     if (error) toast.error(error.message);
@@ -86,6 +90,25 @@ function Settings() {
             ))}
           </div>
         </div>
+      </section>
+
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-soft">
+        <div>
+          <h2 className="font-semibold text-navy">{ar ? "ترويسة المكتب (للمستندات المصدّرة)" : "Firm letterhead (for exported documents)"}</h2>
+          <p className="mt-1 text-xs text-muted-foreground">{ar ? "تظهر في أعلى كل ملف Word مع التاريخ الهجري والميلادي." : "Shown at the top of every Word export, with the Hijri and Gregorian date."}</p>
+        </div>
+        {([
+          ["name_ar", "اسم المكتب (عربي)", "Firm name (Arabic)"],
+          ["name_en", "اسم المكتب (إنجليزي)", "Firm name (English)"],
+          ["address", "العنوان", "Address"],
+          ["contact", "الهاتف / البريد / الموقع", "Phone / email / website"],
+          ["cr", "رقم السجل التجاري / ترخيص المحاماة", "CR / law-licence no."],
+        ] as const).map(([k, a, e]) => (
+          <div key={k} className="space-y-2">
+            <Label htmlFor={k}>{ar ? a : e}</Label>
+            <Input id={k} value={lh[k] ?? ""} onChange={(ev) => setLh({ ...lh, [k]: ev.target.value })} />
+          </div>
+        ))}
       </section>
 
       <Button variant="teal" onClick={save} disabled={busy || !profile}>

@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-// Reads text from scanned page images (OCR) via the AI gateway.
+import { aiFetch } from "@/lib/ai-provider";
+
+// Reads text from scanned page images (OCR) via the configured AI provider.
 export const Route = createFileRoute("/api/ocr")({
   server: {
     handlers: {
@@ -21,21 +23,16 @@ export const Route = createFileRoute("/api/ocr")({
 
         await sb.from("audit_logs").insert({ user_id: u.user.id, action: "ai.ocr", resource: "documents", metadata: { pages: images.length } });
 
-        const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: "Transcribe all text on these scanned document pages exactly, in the original language (Arabic or English). Keep paragraph breaks. Separate pages with a blank line. Output only the text." },
-                  ...images.map((url) => ({ type: "image_url", image_url: { url } })),
-                ],
-              },
-            ],
-          }),
+        const res = await aiFetch({
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Transcribe all text on these scanned document pages exactly, in the original language (Arabic or English). Keep paragraph breaks. Separate pages with a blank line. Output only the text." },
+                ...images.map((url) => ({ type: "image_url", image_url: { url } })),
+              ],
+            },
+          ],
         });
         if (!res.ok) return new Response(res.status === 402 ? "AI credits exhausted." : "OCR failed", { status: res.status === 429 || res.status === 402 ? res.status : 500 });
         const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };

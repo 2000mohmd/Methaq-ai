@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-import { chunkByArticle, councilDisagreement, expandReferences, rank, verifyAnswer, type Chunk, type Source } from "@/lib/legal/legal";
+import { aiFetch, COUNCIL_MODELS } from "@/lib/ai-provider";
+import { loadChunks } from "@/lib/legal/retrieve";
+import { councilDisagreement, expandReferences, rank, verifyAnswer, type Source } from "@/lib/legal/legal";
 
 const SYSTEM = `You are Mithaq, a careful, jurisdiction-aware legal AI assistant for lawyers and individuals in the Arab world (GCC, Egypt, Jordan, Lebanon and beyond).
 - Answer in the user's language (Arabic or English).
@@ -44,21 +46,10 @@ export const Route = createFileRoute("/api/chat")({
 
         // Retrieval over the library (RLS keeps it scoped to the org / the individual):
         // article-level chunks, BM25 + exact-article lookup.
-        // ponytail: lexical only, scans <=300 items per query; add dense embeddings + a DB index when the corpus outgrows that.
         let sources: Source[] = [];
         try {
           const last = [...body.messages].reverse().find((m) => m.role === "user")?.content ?? "";
-          const { data: items } = await sb.from("library_items").select("*").limit(300);
-          const chunks: Chunk[] = (items ?? []).flatMap((it: Record<string, unknown>) =>
-            chunkByArticle(String(it["content"] ?? "")).map((c) => ({
-              title: String(it["title"] ?? ""),
-              jurisdiction: (it["jurisdiction"] as string | null) ?? null,
-              status: String(it["status"] ?? "in_force"),
-              ref: c.ref,
-              text: c.text.slice(0, 3000),
-              sourceUrl: (it["source_url"] as string | null) ?? null,
-            })),
-          );
+          const chunks = await loadChunks(sb);
           sources = expandReferences(rank(last, chunks, 6, body.jurisdiction ?? null), chunks);
         } catch {
           /* library is optional */
@@ -89,16 +80,12 @@ export const Route = createFileRoute("/api/chat")({
 
         // Council mode: same grounded prompt to several models, citations verified per model, disagreement surfaced.
         if (body.mode === "council") {
-          const models = ["google/gemini-2.5-pro", "openai/gpt-5", "google/gemini-3-flash-preview"];
+          const models = COUNCIL_MODELS;
           const msgs = [{ role: "system", content: system }, ...body.messages.slice(-30)];
           const runs = await Promise.all(
             models.map(async (model) => {
               try {
-                const r = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-                  method: "POST",
-                  headers: { Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`, "Content-Type": "application/json" },
-                  body: JSON.stringify({ model, messages: msgs }),
-                });
+                const r = await aiFetch({ model, messages: msgs });
                 if (!r.ok) return null;
                 const j = await r.json();
                 return { model, v: verifyAnswer(String(j.choices?.[0]?.message?.content ?? ""), sources) };
@@ -121,20 +108,9 @@ export const Route = createFileRoute("/api/chat")({
           return new Response(`data: ${JSON.stringify({ mithaq_final: text })}\n\ndata: [DONE]\n\n`, { headers: { "Content-Type": "text/event-stream" } });
         }
 
-        const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-3-flash-preview",
-            stream: true,
-            messages: [{ role: "system", content: system }, ...body.messages.slice(-30)],
-          }),
-        });
+        const res = await aiFetch({ stream: true, messages: [{ role: "system", content: system }, ...body.messages.slice(-30)] });
         if (res.status === 429) return new Response("Rate limited, try again shortly.", { status: 429 });
-        if (res.status === 402) return new Response("AI credits exhausted.", { status: 402 });
+        if (res.status === 402) return new Response("AI quota exhausted.", { status: 402 });
         if (!res.ok || !res.body) return new Response("AI error", { status: 500 });
 
         // Pass the stream through, collect the answer, and before [DONE] send the

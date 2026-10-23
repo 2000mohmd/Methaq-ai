@@ -10,7 +10,6 @@ import { HexPattern } from "@/components/brand/HexPattern";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useI18n } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 
 type Mode = "signin" | "signup" | "reset";
 
@@ -95,15 +94,11 @@ function AuthPage() {
   }
 
   async function onGoogle() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/app` },
     });
-    if (result.error) {
-      toast.error(result.error.message ?? t("common.error"));
-      return;
-    }
-    if (result.redirected) return;
-    navigate({ to: "/app" });
+    if (error) toast.error(error.message ?? t("common.error"));
   }
 
   return (

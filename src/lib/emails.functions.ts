@@ -2,8 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
-const DEFAULT_FROM = "Mithaq Alarabia <onboarding@resend.dev>";
+const RESEND_URL = "https://api.resend.com";
+const DEFAULT_FROM = process.env["EMAIL_FROM"] ?? "Mithaq <onboarding@resend.dev>"; // set EMAIL_FROM once your domain is verified in Resend
 
 const emailSchema = z.object({
   to: z.string().email(),
@@ -16,17 +16,14 @@ async function sendViaResend(
   payload: { to: string; subject: string; text: string; from?: string | undefined },
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ ok: boolean; providerId: string | null; error: string | null }> {
-  const apiKey = process.env["LOVABLE_API_KEY"];
   const resendKey = process.env["RESEND_API_KEY"];
-  if (!apiKey) throw new Error("Server configuration error: LOVABLE_API_KEY missing");
   if (!resendKey) throw new Error("Server configuration error: RESEND_API_KEY missing");
 
-  const res = await fetch(`${GATEWAY_URL}/emails`, {
+  const res = await fetch(`${RESEND_URL}/emails`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-      "X-Connection-Api-Key": resendKey,
+      Authorization: `Bearer ${resendKey}`,
     },
     body: JSON.stringify({
       from: payload.from || DEFAULT_FROM,

@@ -22,4 +22,18 @@ assert.deepEqual(councilDisagreement([new Set([1, 2]), new Set([1])]), [2]);
 const g: GoldEntry = { id: "G1", practice_area: "test", question: "Article 2 epsilon", expected: [{ title: "TEST-LAW", ref: "2" }], status: "approved", authored_by: "a", reviewed_by: "a" };
 assert.ok(validateGold(g).length); // same author cannot self-approve
 assert.equal(scoreRetrieval([{ ...g, reviewed_by: "b" }], [mk("1", "gamma"), mk("2", "epsilon")]).recall, 1);
+import { applyRedlines, parseAudit, splitClauses } from "./audit.ts";
+import { dualDate } from "./dates.ts";
+
+const cl = splitClauses(["Preamble text here for the parties.", "1. First clause about payment terms.", "2. Second clause about termination.", "3. Third clause about disputes."].join(String.fromCharCode(10)));
+assert.equal(cl.length, 4);
+const asrc = rank("alpha", [mk("1", "alpha rule")]);
+const fs = parseAudit('noise [{"n":2,"risk":"high","issue":"x","redline":"fixed","basis":[1,9]},{"n":99,"risk":"high","issue":"ghost","basis":[]},{"n":3,"risk":"high","issue":"y","basis":[]}]', cl, asrc);
+assert.deepEqual(fs.find((f) => f.n === 2)?.basis, [1]); // fabricated [S9] dropped
+assert.equal(fs.find((f) => f.n === 2)?.grounded, true);
+assert.equal(fs.find((f) => f.n === 3)?.grounded, false); // high risk with no verified source is flagged
+assert.equal(fs.length, cl.length); // ghost clause ignored, missing clauses reported as unaudited
+assert.ok(applyRedlines(cl, fs, new Set([2])).includes("fixed"));
+const dd = dualDate(new Date("2026-10-17T12:00:00Z"));
+assert.ok(dd.includes("هـ") && dd.includes("م") && dd.includes("1448"), dd);
 console.log("legal selfcheck ok");
