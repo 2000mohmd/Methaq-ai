@@ -38,7 +38,7 @@ const I18nContext = (g.__mithaqI18nCtx ??= createContext<I18nValue | null>(null)
 const EASTERN = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>("ar");
   const [numerals, setNumeralsState] = useState<Numerals>("western");
 
   useEffect(() => {

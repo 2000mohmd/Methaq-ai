@@ -28,6 +28,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { LogoLockup, LogoMark } from "@/components/brand/Logo";
 import { HexPattern } from "@/components/brand/HexPattern";
+import { HeaderSearch } from "@/components/app/HeaderSearch";
+import { Notifications } from "@/components/app/Notifications";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import {
   DropdownMenu,
@@ -162,6 +164,8 @@ function AppShell() {
     navigate({ to: "/" });
   }
 
+  const navPages = (isClient ? [] : individual ? INDIVIDUAL_GROUPS : GROUPS).flatMap((g) => g.items.map((i) => ({ to: i.to as string, label: t(i.key) })));
+
   if (checking) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -246,20 +250,15 @@ function AppShell() {
             <LayoutGrid />
           </Button>
 
-          <div className="hidden items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-sm text-muted-foreground sm:flex">
-            <Search className="size-4" />
-            {t("app.search")}
-          </div>
+          <HeaderSearch pages={navPages} />
 
           <div className="ms-auto flex items-center gap-1.5">
-            <span className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground sm:inline-flex">
+            <Link to="/pricing" className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:border-teal sm:inline-flex">
               <Coins className="size-3.5 text-teal" />
               {t("app.credits")}
-            </span>
+            </Link>
             <LanguageToggle />
-            <Button variant="ghost" size="icon" aria-label={t("app.notifications")}>
-              <Bell />
-            </Button>
+            <Notifications />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label={t("app.profile")}>
