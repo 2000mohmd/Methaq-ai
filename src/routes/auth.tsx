@@ -37,7 +37,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
   const search = Route.useSearch();
   const [mode, setMode] = useState<Mode>(search.mode === "signup" ? "signup" : "signin");
@@ -57,7 +57,7 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -66,6 +66,13 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        // Auto-confirm projects return a session straight away: go to the app (onboarding follows).
+        if (data.session) {
+          navigate({ to: "/app" });
+          return;
+        }
+        // An already-registered email comes back with no identities and no error.
+        if (data.user && data.user.identities?.length === 0) throw new Error(lang === "ar" ? "هذا البريد مسجّل مسبقاً، سجّل الدخول" : "This email is already registered. Please sign in.");
         toast.success(t("auth.checkEmail"));
         setMode("signin");
       } else if (mode === "signin") {

@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ArrowRight, ArrowLeft, ScrollText, Building2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { LogoLockup, LogoMark } from "@/components/brand/Logo";
 import { HexPattern } from "@/components/brand/HexPattern";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { useI18n } from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
 import { MarketingNav } from "@/components/MarketingLayout";
 import heroDesk from "@/assets/hero-desk.jpg";
 import columns from "@/assets/columns.jpg";
@@ -35,6 +37,21 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const { t, dir } = useI18n();
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
+  const navigate = useNavigate();
+
+  // Email-confirmation and Google sign-in links can land here (the project's Site URL).
+  // When the URL carries auth tokens, send the new session on to the app instead of the homepage.
+  useEffect(() => {
+    const callback = /access_token=|[?&]code=|type=(signup|recovery|magiclink)/.test(window.location.hash + window.location.search);
+    if (!callback) return;
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session) navigate({ to: "/app" });
+    });
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/app" });
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-background">
