@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-import { aiFetch, councilModels } from "@/lib/ai-provider";
+import { AI_NOT_CONFIGURED, aiFetch, councilModels } from "@/lib/ai-provider";
 import { loadChunks } from "@/lib/legal/retrieve";
 import { councilDisagreement, expandReferences, rank, verifyAnswer, type Source } from "@/lib/legal/legal";
 
@@ -109,6 +109,7 @@ export const Route = createFileRoute("/api/chat")({
         }
 
         const res = await aiFetch({ stream: true, messages: [{ role: "system", content: system }, ...body.messages.slice(-30)] });
+        if (res.status === 503) return new Response(AI_NOT_CONFIGURED, { status: 503 });
         if (res.status === 429) return new Response("Rate limited, try again shortly.", { status: 429 });
         if (res.status === 402) return new Response("AI quota exhausted.", { status: 402 });
         if (!res.ok || !res.body) return new Response("AI error", { status: 500 });

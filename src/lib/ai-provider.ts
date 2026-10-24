@@ -19,5 +19,10 @@ export function aiHeaders(): Record<string, string> {
   return { Authorization: `Bearer ${key}`, "Content-Type": "application/json" };
 }
 
-export const aiFetch = (body: Record<string, unknown>) =>
-  fetch(url(), { method: "POST", headers: aiHeaders(), body: JSON.stringify({ model: model(), ...body }) });
+export const AI_NOT_CONFIGURED = "AI is not configured on the server (set ANTHROPIC_API_KEY).";
+
+/** Never throws: with no key it returns a 503 Response so routes can report it cleanly. */
+export const aiFetch = async (body: Record<string, unknown>): Promise<Response> => {
+  if (!ownKey() && !env("LOVABLE_API_KEY")) return new Response(AI_NOT_CONFIGURED, { status: 503 });
+  return fetch(url(), { method: "POST", headers: aiHeaders(), body: JSON.stringify({ model: model(), ...body }) });
+};
