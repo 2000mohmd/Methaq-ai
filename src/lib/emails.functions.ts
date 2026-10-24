@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RESEND_URL = "https://api.resend.com";
+const LOVABLE_GATEWAY = "https://connector-gateway.lovable.dev/resend";
 const DEFAULT_FROM = process.env["EMAIL_FROM"] ?? "Mithaq <onboarding@resend.dev>"; // set EMAIL_FROM once your domain is verified in Resend
 
 const emailSchema = z.object({
@@ -17,13 +18,15 @@ async function sendViaResend(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<{ ok: boolean; providerId: string | null; error: string | null }> {
   const resendKey = process.env["RESEND_API_KEY"];
+  const lovableKey = process.env["LOVABLE_API_KEY"]; // present on Lovable: send through its Resend connector
   if (!resendKey) throw new Error("Server configuration error: RESEND_API_KEY missing");
 
-  const res = await fetch(`${RESEND_URL}/emails`, {
+  const res = await fetch(`${lovableKey ? LOVABLE_GATEWAY : RESEND_URL}/emails`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${resendKey}`,
+      Authorization: `Bearer ${lovableKey ?? resendKey}`,
+      ...(lovableKey ? { "X-Connection-Api-Key": resendKey } : {}),
     },
     body: JSON.stringify({
       from: payload.from || DEFAULT_FROM,

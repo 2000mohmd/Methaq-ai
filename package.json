@@ -11,13 +11,16 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "start": "node .output/server/index.mjs",
-    "test": "node src/lib/legal/selfcheck.ts"
+    "test": "node src/lib/legal/selfcheck.ts",
+    "dev:standalone": "vite dev -c vite.standalone.config.ts",
+    "build:standalone": "vite build -c vite.standalone.config.ts"
   },
   "overrides": {
     "rolldown": "1.2.1"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",

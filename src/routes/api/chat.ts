@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-import { aiFetch, COUNCIL_MODELS } from "@/lib/ai-provider";
+import { aiFetch, councilModels } from "@/lib/ai-provider";
 import { loadChunks } from "@/lib/legal/retrieve";
 import { councilDisagreement, expandReferences, rank, verifyAnswer, type Source } from "@/lib/legal/legal";
 
@@ -80,7 +80,7 @@ export const Route = createFileRoute("/api/chat")({
 
         // Council mode: same grounded prompt to several models, citations verified per model, disagreement surfaced.
         if (body.mode === "council") {
-          const models = COUNCIL_MODELS;
+          const models = councilModels();
           const msgs = [{ role: "system", content: system }, ...body.messages.slice(-30)];
           const runs = await Promise.all(
             models.map(async (model) => {

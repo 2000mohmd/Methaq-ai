@@ -22,3 +22,8 @@
 ## 4. Deploy
 `npm run build` produces a standalone Node server in `.output/` (Docker, Railway, Fly, a VPS, ...).
 Set the same environment variables on the host.
+
+## Lovable (optional)
+The repo also works with Lovable. `vite.config.ts` is the Lovable-managed config; for your own hosting use
+`npm run dev:standalone` / `npm run build:standalone` (uses `vite.standalone.config.ts`). On Lovable the AI gateway,
+email connector and Google sign-in are used automatically when no own keys are set.
