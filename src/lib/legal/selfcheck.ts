@@ -36,4 +36,7 @@ assert.equal(fs.length, cl.length); // ghost clause ignored, missing clauses rep
 assert.ok(applyRedlines(cl, fs, new Set([2])).includes("fixed"));
 const dd = dualDate(new Date("2026-10-17T12:00:00Z"));
 assert.ok(dd.includes("هـ") && dd.includes("م") && dd.includes("1448"), dd);
+const probation = [mk("1", "A probation period must not exceed ninety days.")];
+assert.equal(rank("What is the maximum notice period for a tenant under the rental law?", probation).length, 0); // one shared word ("period") is not a source
+assert.equal(rank("probation period maximum", probation).length, 1); // real match still found
 console.log("legal selfcheck ok");

@@ -22,7 +22,12 @@ export const norm = (s: string) =>
     .replace(/[أإآ]/g, "ا")
     .replace(/ى/g, "ي");
 
-const tokens = (s: string) => norm(s).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 1);
+const STOP = new Set(
+  ("the of and or a an to in on for by with at from is are was were be as it its this that these those under what which who whom how when where " +
+    "law laws article articles regulation regulations nizam does do did can may must shall not no any all per than then if into about between has have had their there here your our you we they " +
+    "نظام المادة مادة الأنظمة في من على الى إلى عن مع هذا هذه ذلك تلك التي الذي الذين ما ماذا هل كيف متى اين أين لا لم لن ان إن أن او أو ثم قد كل بين عند هو هي").split(" "),
+);
+const tokens = (s: string) => norm(s).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 1 && !STOP.has(w));
 
 const ART_HEAD = /^[ \t]*(?:article|art\.|المادة|مادة)[ \t]*[(\[]?[ \t]*(\d+)[ \t]*[)\]]?/gim;
 const ART_MENTION = /(?:article|art\.|المادة|مادة)[ \t]*[(\[]?[ \t]*(\d+)/gi;
@@ -55,16 +60,20 @@ export function rank(query: string, chunks: Chunk[], k = 5, jurisdiction?: strin
   const df = new Map<string, number>();
   for (const d of docs) for (const w of new Set(d)) df.set(w, (df.get(w) ?? 0) + 1);
   const N = docs.length;
+  const need = Math.min(2, new Set(q).size); // a single shared word is not enough to count as a source
   const scored = chunks.map((c, i) => {
     const d = docs[i]!;
     let s = 0;
+    let matched = 0;
     for (const w of new Set(q)) {
       const f = d.filter((x) => x === w).length;
       if (!f) continue;
+      matched++;
       const idf = Math.log(1 + (N - (df.get(w) ?? 0) + 0.5) / ((df.get(w) ?? 0) + 0.5));
       s += (idf * f * 2.5) / (f + 1.5 * (0.25 + (0.75 * d.length) / avg));
     }
     if (c.ref && wanted.has(c.ref)) s += 10;
+    else if (matched < need) s = 0;
     if (jurisdiction && c.jurisdiction === jurisdiction && s > 0) s += 0.5;
     return { c, s };
   });
