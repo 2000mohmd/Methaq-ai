@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
 import { allow, TOO_MANY } from "@/lib/rate-limit";
-import { AI_NOT_CONFIGURED, aiFetch } from "@/lib/ai-provider";
+import { AI_NOT_CONFIGURED, aiError, aiFetch } from "@/lib/ai-provider";
 
 // Reads text from scanned page images (OCR) via the configured AI provider.
 export const Route = createFileRoute("/api/ocr")({
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/ocr")({
           ],
         });
         if (res.status === 503) return new Response(AI_NOT_CONFIGURED, { status: 503 });
-        if (!res.ok) return new Response(res.status === 402 ? "AI credits exhausted." : "OCR failed", { status: res.status === 429 || res.status === 402 ? res.status : 500 });
+        if (!res.ok) return aiError(res);
         const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
         return Response.json({ text: json.choices?.[0]?.message?.content ?? "" });
       },

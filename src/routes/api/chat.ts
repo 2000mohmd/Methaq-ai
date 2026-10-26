@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-import { AI_NOT_CONFIGURED, aiFetch, councilModels } from "@/lib/ai-provider";
+import { AI_NOT_CONFIGURED, aiError, aiFetch, councilModels } from "@/lib/ai-provider";
 import { allow, TOO_MANY } from "@/lib/rate-limit";
 import { loadChunks } from "@/lib/legal/retrieve";
 import { councilDisagreement, expandReferences, rank, verifyAnswer, type Source } from "@/lib/legal/legal";
@@ -116,7 +116,8 @@ export const Route = createFileRoute("/api/chat")({
         if (res.status === 503) return new Response(AI_NOT_CONFIGURED, { status: 503 });
         if (res.status === 429) return new Response("Rate limited, try again shortly.", { status: 429 });
         if (res.status === 402) return new Response("AI quota exhausted.", { status: 402 });
-        if (!res.ok || !res.body) return new Response("AI error", { status: 500 });
+        if (!res.ok) return aiError(res);
+        if (!res.body) return new Response("AI error", { status: 502 });
 
         // Pass the stream through, collect the answer, and before [DONE] send the
         // mechanically verified version (unverifiable citations stripped) as a final event.

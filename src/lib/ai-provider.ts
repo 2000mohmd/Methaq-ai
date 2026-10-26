@@ -26,3 +26,17 @@ export const aiFetch = async (body: Record<string, unknown>): Promise<Response> 
   if (!ownKey() && !env("LOVABLE_API_KEY")) return new Response(AI_NOT_CONFIGURED, { status: 503 });
   return fetch(url(), { method: "POST", headers: aiHeaders(), body: JSON.stringify({ model: model(), ...body }) });
 };
+
+/** Turns a failed provider response into a readable error for the user (never includes keys). */
+export async function aiError(res: Response): Promise<Response> {
+  let msg = "";
+  try {
+    const j = (await res.json()) as { error?: { message?: string } };
+    msg = j.error?.message ?? "";
+  } catch {
+    /* non-JSON body */
+  }
+  if (/credit balance/i.test(msg)) msg = "The AI provider account has no credit left. Add credit in the provider billing page.";
+  else if (res.status === 401 || res.status === 403) msg = "The AI key was rejected. Check ANTHROPIC_API_KEY.";
+  return new Response(msg ? `AI error: ${msg}` : "AI error", { status: 502 });
+}

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-import { AI_NOT_CONFIGURED, aiFetch } from "@/lib/ai-provider";
+import { AI_NOT_CONFIGURED, aiError, aiFetch } from "@/lib/ai-provider";
 import { parseAudit, type Clause } from "@/lib/legal/audit";
 import { rank, type Source } from "@/lib/legal/legal";
 import { allow, TOO_MANY } from "@/lib/rate-limit";
@@ -56,7 +56,7 @@ export const Route = createFileRoute("/api/audit")({
         });
         if (res.status === 503) return new Response(AI_NOT_CONFIGURED, { status: 503 });
         if (res.status === 429) return new Response("Rate limited, try again shortly.", { status: 429 });
-        if (!res.ok) return new Response("AI error", { status: 500 });
+        if (!res.ok) return aiError(res);
         const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
         const findings = parseAudit(json.choices?.[0]?.message?.content ?? "", clauses, sources);
         return Response.json({
