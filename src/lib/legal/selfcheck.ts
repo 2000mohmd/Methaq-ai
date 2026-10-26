@@ -50,4 +50,10 @@ import { isCorruptArabic } from "./textquality.ts";
 const garbled = "املادة األوىل: يف األحوال الشخصية. ".repeat(12);
 assert.equal(isCorruptArabic(garbled), true); // swapped/dropped letters from a broken PDF font map
 assert.equal(isCorruptArabic("المادة الأولى: نص سليم في الأحوال الشخصية على المال. ".repeat(12)), false);
+import { buildCorpusSql } from "./corpus.ts";
+const built = buildCorpusSql("المادة الأولى: نص تجريبي أول. المادة الثانية: نص ثان فيه $law$ رمز غريب. المادة الرابعة: نص رابع.", { title: "TEST-LAW", url: "https://example.invalid/test" });
+assert.equal(built.report.articles, 3);
+assert.deepEqual(built.report.missing, [3]); // gap between 2 and 4 is reported
+assert.ok(built.sql.includes("$lawx$") && built.sql.includes("ON CONFLICT"), "dollar-quote tag avoids collisions");
+assert.throws(() => buildCorpusSql("x", { title: "t", url: "" }), /official source/);
 console.log("legal selfcheck ok");
