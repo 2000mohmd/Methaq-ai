@@ -97,6 +97,10 @@ function Settings() {
           <h2 className="font-semibold text-navy">{ar ? "ترويسة المكتب (للمستندات المصدّرة)" : "Firm letterhead (for exported documents)"}</h2>
           <p className="mt-1 text-xs text-muted-foreground">{ar ? "تظهر في أعلى كل ملف Word مع التاريخ الهجري والميلادي." : "Shown at the top of every Word export, with the Hijri and Gregorian date."}</p>
         </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={lh.logo !== false} onChange={(e) => setLh({ ...lh, logo: e.target.checked })} />
+          {ar ? "إظهار شعار ميثاق العربية في الترويسة" : "Show the Mithaq Alarabia logo in the header"}
+        </label>
         {([
           ["name_ar", "اسم المكتب (عربي)", "Firm name (Arabic)"],
           ["name_en", "اسم المكتب (إنجليزي)", "Firm name (English)"],
