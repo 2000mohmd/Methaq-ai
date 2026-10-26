@@ -39,4 +39,11 @@ assert.ok(dd.includes("هـ") && dd.includes("م") && dd.includes("1448"), dd);
 const probation = [mk("1", "A probation period must not exceed ninety days.")];
 assert.equal(rank("What is the maximum notice period for a tenant under the rental law?", probation).length, 0); // one shared word ("period") is not a source
 assert.equal(rank("probation period maximum", probation).length, 1); // real match still found
+// Arabic ordinal articles, including flattened PDF text (no newlines) and in-text references that are not headings.
+const flat = "مقدمة تجريبية. المادة الأولى: نص تجريبي اول. المادة الثانية عشرة: نص ثان وفقا للمادة الخامسة من هذا النظام. المادة الرابعة والسبعون: نص ثالث. المادة الخامسة بعد المائة: نص رابع.";
+assert.deepEqual(chunkByArticle(flat).map((c) => c.ref), ["", "1", "12", "74", "105"]);
+assert.deepEqual(chunkByArticle("المادة ( ٧ ) نص").map((c) => c.ref), ["7"]);
+const arCorpus: Chunk[] = chunkByArticle(flat).map((c) => ({ title: "TEST-LAW", jurisdiction: null, status: "in_force", ref: c.ref, text: c.text, sourceUrl: null }));
+assert.equal(rank("ماذا تقول المادة 74", arCorpus)[0]?.ref, "74"); // digit query finds the ordinal-numbered article
+assert.deepEqual(chunkByArticle("ﺍﻟﻤﺎﺩﺓ ﺍﻟﺃﻭﻟﻰ: نص").map((c) => c.ref), ["1"]); // presentation-form Arabic
 console.log("legal selfcheck ok");

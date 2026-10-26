@@ -12,12 +12,14 @@ export type Chunk = {
 
 export type Source = Chunk & { id: number };
 
+import { findHeadings, mentionedArticles } from "./articles.ts";
+
 const EASTERN = "٠١٢٣٤٥٦٧٨٩";
 export const westernDigits = (s: string) => s.replace(/[٠-٩]/g, (d) => String(EASTERN.indexOf(d)));
 
 /** Light Arabic normalisation so "الأولى"/"الاولى", diacritics and tatweel don't break matching. */
 export const norm = (s: string) =>
-  westernDigits(s.toLowerCase())
+  westernDigits(s.normalize("NFKC").toLowerCase())
     .replace(/[\u064B-\u0652\u0640]/g, "")
     .replace(/[أإآ]/g, "ا")
     .replace(/ى/g, "ي");
@@ -29,27 +31,22 @@ const STOP = new Set(
 );
 const tokens = (s: string) => norm(s).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length > 1 && !STOP.has(w));
 
-const ART_HEAD = /^[ \t]*(?:article|art\.|المادة|مادة)[ \t]*[(\[]?[ \t]*(\d+)[ \t]*[)\]]?/gim;
-const ART_MENTION = /(?:article|art\.|المادة|مادة)[ \t]*[(\[]?[ \t]*(\d+)/gi;
-
 /** Split on article (madda) boundaries, never on a fixed window. */
 export function chunkByArticle(text: string): { ref: string; text: string }[] {
-  const t = westernDigits(text);
-  const heads = [...t.matchAll(ART_HEAD)];
+  const t = westernDigits(text.normalize("NFKC")); // NFKC folds Arabic presentation forms that PDFs often emit
+  const heads = findHeadings(t);
   if (heads.length === 0) return t.trim() ? [{ ref: "", text: t.trim() }] : [];
   const out: { ref: string; text: string }[] = [];
   const pre = t.slice(0, heads[0]!.index).trim();
   if (pre) out.push({ ref: "", text: pre });
   heads.forEach((h, i) => {
     const end = heads[i + 1]?.index ?? t.length;
-    out.push({ ref: h[1]!, text: t.slice(h.index, end).trim() });
+    out.push({ ref: h.ref, text: t.slice(h.index, end).trim() });
   });
   return out;
 }
 
-export function articleNumbers(s: string): string[] {
-  return [...westernDigits(s).matchAll(ART_MENTION)].map((m) => m[1]!);
-}
+export const articleNumbers = mentionedArticles;
 
 /** BM25 over chunks, plus a strong boost when the query names an article the chunk carries. */
 export function rank(query: string, chunks: Chunk[], k = 5, jurisdiction?: string | null): Source[] {
