@@ -36,3 +36,12 @@ email connector and Google sign-in are used automatically when no own keys are s
 5. In Supabase -> Authentication -> URL Configuration set Site URL to `https://your-domain.com` and add `https://your-domain.com/**` to Redirect URLs.
 6. Google sign-in (optional): create an OAuth client in Google Cloud, add Supabase's callback URL, paste the client id/secret in Supabase -> Providers -> Google.
 Do not load real client documents until the PDPL review and data-residency decision are done.
+
+## Shared Node.js hosting (no Docker)
+Build on your own computer, upload the result:
+1. `npm run build:standalone` (uses your local `.env`; the Supabase URL and publishable key are baked into the browser files).
+2. Zip `.output/` and `start.cjs` (or use the prepared `mithaq-deploy.zip`) and upload/extract it in your app folder.
+3. In the host's Node.js app screen: Node version 20 or newer, startup file `start.cjs`, and add the environment variables
+   `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `ANTHROPIC_API_KEY`, optional `RESEND_API_KEY`, `EMAIL_FROM`. Do not set a PORT; the host provides it.
+4. Start / restart the app, then open your domain. Set that domain as Site URL and redirect URL in Supabase.
+No `npm install` is needed on the server: the build is self-contained.
