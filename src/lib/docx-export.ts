@@ -1,7 +1,7 @@
 // Browser-side Word export: firm letterhead header, dual Hijri/Gregorian date, RTL-aware body from markdown.
 import { AlignmentType, BorderStyle, Document, Footer, Header, Packer, PageNumber, Paragraph, TextRun } from "docx";
 
-import { dualDate } from "@/lib/legal/dates";
+import { dualDate } from "./legal/dates.ts";
 
 export type Letterhead = {
   name_ar?: string;
@@ -93,15 +93,4 @@ export async function downloadDocx(opts: Parameters<typeof buildDocx>[0], filena
   a.download = filename.endsWith(".docx") ? filename : `${filename}.docx`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-}
-
-import { supabase } from "@/integrations/supabase/client";
-
-/** The signed-in user's saved letterhead (Settings), if any. */
-export async function loadLetterhead(): Promise<Letterhead> {
-  const { data: u } = await supabase.auth.getUser();
-  if (!u.user) return {};
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any).from("profiles").select("letterhead").eq("id", u.user.id).single();
-  return (data?.letterhead as Letterhead | null) ?? {};
 }

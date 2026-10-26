@@ -4,7 +4,8 @@ import { AlertTriangle, Check, Download, FileSearch, Loader2, ShieldAlert, Uploa
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { downloadDocx, loadLetterhead } from "@/lib/docx-export";
+import { downloadDocx } from "@/lib/docx-export";
+import { loadLetterhead } from "@/lib/letterhead";
 import { applyRedlines, splitClauses, type Clause, type Finding, type Risk } from "@/lib/legal/audit";
 import { useI18n } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";

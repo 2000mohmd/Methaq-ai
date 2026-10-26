@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { AI_NOT_CONFIGURED, aiFetch } from "@/lib/ai-provider";
 import { parseAudit, type Clause } from "@/lib/legal/audit";
 import { rank, type Source } from "@/lib/legal/legal";
+import { allow, TOO_MANY } from "@/lib/rate-limit";
 import { loadChunks } from "@/lib/legal/retrieve";
 
 const SYSTEM = `You are a senior Saudi-law contract auditor. For EACH clause you are given, assess its legal risk under Saudi law for the party the user represents (neutral if not stated).
@@ -27,8 +28,9 @@ export const Route = createFileRoute("/api/audit")({
         const { data: u, error } = await sb.auth.getUser(token);
         if (error || !u.user) return new Response("Unauthorized", { status: 401 });
 
+        if (!allow(u.user.id, "audit", 20)) return new Response(TOO_MANY, { status: 429 });
         const body = (await request.json()) as { clauses?: Clause[]; jurisdiction?: string; party?: string };
-        const clauses = (body.clauses ?? []).filter((c) => c && typeof c.text === "string").slice(0, 8);
+        const clauses = (body.clauses ?? []).filter((c) => c && typeof c.text === "string").slice(0, 8).map((c) => ({ n: Number(c.n), text: c.text.slice(0, 6000) }));
         if (clauses.length === 0) return new Response("Bad request", { status: 400 });
 
         // Retrieve library sources per clause, merged into one numbered list for this call.

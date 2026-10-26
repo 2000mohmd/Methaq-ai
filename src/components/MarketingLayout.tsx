@@ -27,7 +27,7 @@ export function MarketingNav() {
 }
 
 export function MarketingLayout({ title, subtitle, children }: { title: string; subtitle: string; children: ReactNode }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
@@ -53,6 +53,10 @@ export function MarketingLayout({ title, subtitle, children }: { title: string; 
       </section>
       <main className="mx-auto max-w-6xl px-6 py-16">{children}</main>
       <footer className="border-t border-border py-8 text-center text-xs text-muted-foreground">
+        <p className="mb-2 flex justify-center gap-4">
+          <Link to="/terms" className="hover:text-navy">{lang === "ar" ? "شروط الاستخدام" : "Terms"}</Link>
+          <Link to="/privacy" className="hover:text-navy">{lang === "ar" ? "الخصوصية" : "Privacy"}</Link>
+        </p>
         © {new Date().getFullYear()} Mithaq Alarabia · {t("brand.name")}
       </footer>
     </div>

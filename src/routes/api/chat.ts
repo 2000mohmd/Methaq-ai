@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
 import { AI_NOT_CONFIGURED, aiFetch, councilModels } from "@/lib/ai-provider";
+import { allow, TOO_MANY } from "@/lib/rate-limit";
 import { loadChunks } from "@/lib/legal/retrieve";
 import { councilDisagreement, expandReferences, rank, verifyAnswer, type Source } from "@/lib/legal/legal";
 
@@ -35,6 +36,7 @@ export const Route = createFileRoute("/api/chat")({
         const { data: userData, error } = await sb.auth.getUser(token);
         if (error || !userData.user) return new Response("Unauthorized", { status: 401 });
 
+        if (!allow(userData.user.id, "chat", 30)) return new Response(TOO_MANY, { status: 429 });
         const body = (await request.json()) as {
           messages: { role: "user" | "assistant"; content: string }[];
           jurisdiction?: string;
@@ -55,6 +57,8 @@ export const Route = createFileRoute("/api/chat")({
           /* library is optional */
         }
 
+        if (body.mode === "council" && !allow(userData.user.id, "council", 4)) return new Response(TOO_MANY, { status: 429 });
+        if (JSON.stringify(body.messages).length > 200_000) return new Response("Message too large", { status: 413 });
         const libraryCtx = sources.length
           ? GROUNDED +
             sources

@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "start": "node .output/server/index.mjs",
-    "test": "node src/lib/legal/selfcheck.ts",
+    "test": "node src/lib/legal/selfcheck.ts && node src/lib/docx-check.ts",
     "dev:standalone": "vite dev -c vite.standalone.config.ts",
     "build:standalone": "vite build -c vite.standalone.config.ts"
   },

@@ -15,7 +15,9 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SecurityRouteImport } from './routes/security'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiAuditRouteImport } from './routes/api/audit'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiOcrRouteImport } from './routes/api/ocr'
@@ -70,9 +72,19 @@ const PricingRoute = PricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SecurityRoute = SecurityRouteImport.update({
   id: '/security',
   path: '/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuditRoute = ApiAuditRouteImport.update({
@@ -198,7 +210,9 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/security': typeof SecurityRoute
+  '/terms': typeof TermsRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -229,7 +243,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/security': typeof SecurityRoute
+  '/terms': typeof TermsRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -262,7 +278,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
   '/pricing': typeof PricingRoute
+  '/privacy': typeof PrivacyRoute
   '/security': typeof SecurityRoute
+  '/terms': typeof TermsRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/ocr': typeof ApiOcrRoute
@@ -296,7 +314,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/pricing'
+    | '/privacy'
     | '/security'
+    | '/terms'
     | '/api/audit'
     | '/api/chat'
     | '/api/ocr'
@@ -327,7 +347,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/pricing'
+    | '/privacy'
     | '/security'
+    | '/terms'
     | '/api/audit'
     | '/api/chat'
     | '/api/ocr'
@@ -359,7 +381,9 @@ export interface FileRouteTypes {
     | '/auth'
     | '/onboarding'
     | '/pricing'
+    | '/privacy'
     | '/security'
+    | '/terms'
     | '/api/audit'
     | '/api/chat'
     | '/api/ocr'
@@ -392,7 +416,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
   PricingRoute: typeof PricingRoute
+  PrivacyRoute: typeof PrivacyRoute
   SecurityRoute: typeof SecurityRoute
+  TermsRoute: typeof TermsRoute
   ApiAuditRoute: typeof ApiAuditRoute
   ApiChatRoute: typeof ApiChatRoute
   ApiOcrRoute: typeof ApiOcrRoute
@@ -442,11 +468,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/security': {
       id: '/security'
       path: '/security'
       fullPath: '/security'
       preLoaderRoute: typeof SecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/audit': {
@@ -668,7 +708,9 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,
   PricingRoute: PricingRoute,
+  PrivacyRoute: PrivacyRoute,
   SecurityRoute: SecurityRoute,
+  TermsRoute: TermsRoute,
   ApiAuditRoute: ApiAuditRoute,
   ApiChatRoute: ApiChatRoute,
   ApiOcrRoute: ApiOcrRoute,
