@@ -46,4 +46,8 @@ assert.deepEqual(chunkByArticle("المادة ( ٧ ) نص").map((c) => c.ref), [
 const arCorpus: Chunk[] = chunkByArticle(flat).map((c) => ({ title: "TEST-LAW", jurisdiction: null, status: "in_force", ref: c.ref, text: c.text, sourceUrl: null }));
 assert.equal(rank("ماذا تقول المادة 74", arCorpus)[0]?.ref, "74"); // digit query finds the ordinal-numbered article
 assert.deepEqual(chunkByArticle("ﺍﻟﻤﺎﺩﺓ ﺍﻟﺃﻭﻟﻰ: نص").map((c) => c.ref), ["1"]); // presentation-form Arabic
+import { isCorruptArabic } from "./textquality.ts";
+const garbled = "املادة األوىل: يف األحوال الشخصية. ".repeat(12);
+assert.equal(isCorruptArabic(garbled), true); // swapped/dropped letters from a broken PDF font map
+assert.equal(isCorruptArabic("المادة الأولى: نص سليم في الأحوال الشخصية على المال. ".repeat(12)), false);
 console.log("legal selfcheck ok");

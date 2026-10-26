@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/ocr")({
         const { data: u, error } = await sb.auth.getUser(token);
         if (error || !u.user) return new Response("Unauthorized", { status: 401 });
 
-        if (!allow(u.user.id, "ocr", 10)) return new Response(TOO_MANY, { status: 429 });
+        if (!allow(u.user.id, "ocr", 20)) return new Response(TOO_MANY, { status: 429 });
         const body = (await request.json()) as { images?: string[] };
         const images = (body.images ?? []).filter((s) => typeof s === "string" && s.startsWith("data:image/"));
         if (images.length === 0 || images.length > 8) return new Response("Bad request", { status: 400 });

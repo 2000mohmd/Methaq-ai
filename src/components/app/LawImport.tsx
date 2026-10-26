@@ -18,6 +18,9 @@ export function LawImport({ onDone }: { onDone: () => void }) {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState("in_force");
   const [busy, setBusy] = useState(false);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [progress, setProgress] = useState("");
 
   async function run(file: File) {
     if (!title || !url) {
@@ -27,7 +30,15 @@ export function LawImport({ onDone }: { onDone: () => void }) {
     setBusy(true);
     try {
       const { extractText } = await import("@/lib/extract-text");
-      const content = (await extractText(file)).trim();
+      const content = (
+        await extractText(file, {
+          maxPages: 300,
+          maxOcrPages: 200,
+          ...(from ? { fromPage: Number(from) } : {}),
+          ...(to ? { toPage: Number(to) } : {}),
+          onProgress: setProgress,
+        })
+      ).trim();
       if (!content) throw new Error(ar ? "تعذر قراءة نص الملف" : "No readable text in this file");
       const { data: u } = await supabase.auth.getUser();
       const { data: p } = await supabase.from("profiles").select("organization_id").eq("id", u.user!.id).single();
@@ -44,6 +55,7 @@ export function LawImport({ onDone }: { onDone: () => void }) {
       toast.error((e as Error).message);
     }
     setBusy(false);
+    setProgress("");
   }
 
   return (
@@ -62,6 +74,12 @@ export function LawImport({ onDone }: { onDone: () => void }) {
           {["in_force", "amended", "repealed"].map((s) => <option key={s}>{s}</option>)}
         </select>
       </div>
+      <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+        <span>{ar ? "نطاق الصفحات (اختياري):" : "Page range (optional):"}</span>
+        <Input className="w-20" inputMode="numeric" placeholder={ar ? "من" : "from"} value={from} onChange={(e) => setFrom(e.target.value.replace(/\D/g, ""))} />
+        <Input className="w-20" inputMode="numeric" placeholder={ar ? "إلى" : "to"} value={to} onChange={(e) => setTo(e.target.value.replace(/\D/g, ""))} />
+      </div>
+      {progress && <p className="mt-2 text-xs text-teal">{progress}</p>}
       <label className="mt-3 inline-block">
         <input type="file" accept=".pdf,.docx,.txt" hidden disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) run(f); e.target.value = ""; }} />
         <Button asChild variant="outline" disabled={busy}>
