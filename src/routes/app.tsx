@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  BarChart3,
   Bell,
   Building2,
   CalendarDays,
@@ -103,11 +104,10 @@ const INDIVIDUAL_GROUPS = [
   },
 ] as const;
 
-// Platform lawyers (platform_reviewers) get the review queue, whatever their account type.
-const REVIEW_GROUP = {
-  label: "app.groupReview",
-  items: [{ to: "/app/review", key: "app.review", icon: Scale }] as const,
-};
+// Platform staff (platform_staff) get the admin panel, whatever their account type:
+// admins see analytics + review, lawyers see review only.
+const PLATFORM_ITEM = { to: "/app/platform", key: "app.platform", icon: BarChart3 } as const;
+const REVIEW_ITEM = { to: "/app/review", key: "app.review", icon: Scale } as const;
 
 function AppShell() {
   const { t } = useI18n();
@@ -117,6 +117,7 @@ function AppShell() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isReviewer, setIsReviewer] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -155,8 +156,13 @@ function AppShell() {
         .eq("user_id", user.id);
       const roles = (roleRows ?? []) as { role: string }[];
       if (roles.length > 0 && roles.every((r) => r.role === "client")) setIsClient(true);
-      const { data: reviewer } = await supabase.rpc("is_reviewer");
+      const [{ data: reviewer }, { data: admin }] = await Promise.all([
+        supabase.rpc("is_reviewer"),
+        supabase.rpc("is_platform_admin"),
+      ]);
+      if (!active) return;
       setIsReviewer(!!reviewer);
+      setIsAdmin(!!admin);
       setChecking(false);
     });
     return () => {
@@ -167,7 +173,7 @@ function AppShell() {
   // Individuals can't open firm-management pages by typing the URL.
   const pathname = useLocation({ select: (l) => l.pathname });
   const individual = profile?.account_type === "individual";
-  const allowed = INDIVIDUAL_GROUPS[0].items.some((i) => pathname.startsWith(i.to)) || pathname.startsWith("/app/review") || pathname === "/app" || pathname === "/app/";
+  const allowed = INDIVIDUAL_GROUPS[0].items.some((i) => pathname.startsWith(i.to)) || pathname.startsWith("/app/review") || pathname.startsWith("/app/platform") || pathname === "/app" || pathname === "/app/";
   useEffect(() => {
     if (!checking && individual && !allowed) navigate({ to: "/app/chat" });
   }, [checking, individual, allowed, navigate]);
@@ -182,7 +188,8 @@ function AppShell() {
     : individual
       ? INDIVIDUAL_GROUPS
       : GROUPS;
-  const groups = isReviewer ? [...baseGroups, REVIEW_GROUP] : baseGroups;
+  const staffItems = [...(isAdmin ? [PLATFORM_ITEM] : []), ...(isReviewer ? [REVIEW_ITEM] : [])];
+  const groups = staffItems.length ? [...baseGroups, { label: "app.groupReview", items: staffItems }] : baseGroups;
   const navPages = (isClient ? groups.slice(1) : groups).flatMap((g) => g.items.map((i) => ({ to: i.to as string, label: t(i.key) })));
 
   if (checking) {

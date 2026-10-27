@@ -37,6 +37,7 @@ import { Route as AppKycRouteImport } from './routes/app/kyc'
 import { Route as AppLeadsRouteImport } from './routes/app/leads'
 import { Route as AppLibraryRouteImport } from './routes/app/library'
 import { Route as AppMattersRouteImport } from './routes/app/matters'
+import { Route as AppPlatformRouteImport } from './routes/app/platform'
 import { Route as AppPortalRouteImport } from './routes/app/portal'
 import { Route as AppReviewRouteImport } from './routes/app/review'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
@@ -184,6 +185,11 @@ const AppMattersRoute = AppMattersRouteImport.update({
   path: '/matters',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlatformRoute = AppPlatformRouteImport.update({
+  id: '/platform',
+  path: '/platform',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPortalRoute = AppPortalRouteImport.update({
   id: '/portal',
   path: '/portal',
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
+  '/app/platform': typeof AppPlatformRoute
   '/app/portal': typeof AppPortalRoute
   '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
@@ -278,6 +285,7 @@ export interface FileRoutesByTo {
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
+  '/app/platform': typeof AppPlatformRoute
   '/app/portal': typeof AppPortalRoute
   '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
+  '/app/platform': typeof AppPlatformRoute
   '/app/portal': typeof AppPortalRoute
   '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
@@ -353,6 +362,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
+    | '/app/platform'
     | '/app/portal'
     | '/app/review'
     | '/app/settings'
@@ -388,6 +398,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
+    | '/app/platform'
     | '/app/portal'
     | '/app/review'
     | '/app/settings'
@@ -424,6 +435,7 @@ export interface FileRouteTypes {
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
+    | '/app/platform'
     | '/app/portal'
     | '/app/review'
     | '/app/settings'
@@ -647,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMattersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/platform': {
+      id: '/app/platform'
+      path: '/platform'
+      fullPath: '/app/platform'
+      preLoaderRoute: typeof AppPlatformRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/portal': {
       id: '/app/portal'
       path: '/portal'
@@ -707,6 +726,7 @@ interface AppRouteChildren {
   AppLeadsRoute: typeof AppLeadsRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppMattersRoute: typeof AppMattersRoute
+  AppPlatformRoute: typeof AppPlatformRoute
   AppPortalRoute: typeof AppPortalRoute
   AppReviewRoute: typeof AppReviewRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -731,6 +751,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeadsRoute: AppLeadsRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppMattersRoute: AppMattersRoute,
+  AppPlatformRoute: AppPlatformRoute,
   AppPortalRoute: AppPortalRoute,
   AppReviewRoute: AppReviewRoute,
   AppSettingsRoute: AppSettingsRoute,

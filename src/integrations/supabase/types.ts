@@ -879,7 +879,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_platform_admin: { Args: never; Returns: boolean }
       is_reviewer: { Args: never; Returns: boolean }
+      platform_stats: { Args: never; Returns: Json }
       review_queue: {
         Args: never
         Returns: {
