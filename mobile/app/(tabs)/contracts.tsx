@@ -1,9 +1,9 @@
 // Native port of the website's src/routes/app/contracts.tsx (Saudi contract builder).
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, type ScrollViewInstance, Share, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, type ScrollViewInstance, Share, Text, TextInput, View } from "react-native";
 
-import { streamChat } from "../../lib/api";
+import { postJSON } from "../../lib/api";
 import { shareDocx } from "../../lib/docx-export";
 import { loadLetterhead } from "../../lib/letterhead";
 import { supabase } from "../../lib/supabase";
@@ -100,7 +100,27 @@ const LANGS = [
 ] as const;
 type OutLang = (typeof LANGS)[number]["v"];
 
-type Saved = { id: string; title: string; contract_type: string; body: string; inputs: Record<string, string>; language?: OutLang; created_at: string };
+type Status = "pending_review" | "approved" | "rejected";
+// Clients can never read the AI draft (body) -- only the lawyer-approved text (per-instance review).
+const COLS = "id,title,contract_type,language,inputs,status,approved_body,review_note,reviewed_at,created_at,updated_at";
+type Saved = {
+  id: string; title: string; contract_type: string; inputs: Record<string, string>; language?: OutLang; created_at: string;
+  status: Status; approved_body: string | null; review_note: string | null;
+};
+const STATUS: Record<Status, { ar: string; color: string }> = {
+  pending_review: { ar: "قيد المراجعة", color: C.amber },
+  approved: { ar: "معتمد", color: C.teal },
+  rejected: { ar: "مرفوض", color: C.danger },
+};
+
+function Badge({ status }: { status: Status }) {
+  const b = STATUS[status] ?? STATUS.pending_review;
+  return (
+    <View style={{ borderRadius: 999, borderWidth: 1, borderColor: b.color, paddingHorizontal: 10, paddingVertical: 3 }}>
+      <Text style={{ fontSize: 12, color: b.color }}>{b.ar}</Text>
+    </View>
+  );
+}
 
 function Chip({ label, active, done, onPress }: { label: string; active: boolean; done?: boolean; onPress: () => void }) {
   return (
@@ -129,25 +149,29 @@ export default function Screen() {
   const [step, setStep] = useState(0);
   const [values, setValues] = useState<Record<string, string>>({});
   const [outLang, setOutLang] = useState<OutLang>("ar");
-  const [out, setOut] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState<Saved[]>([]);
-  const [savedId, setSavedId] = useState<string | null>(null);
+  const [cur, setCur] = useState<Saved | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const scroll = useRef<ScrollViewInstance>(null);
 
   async function load() {
-    const { data } = await supabase.from("contracts").select("*").order("created_at", { ascending: false }).limit(50);
-    setSaved((data ?? []) as unknown as Saved[]);
+    const { data, error } = await supabase.from("contracts").select(COLS).order("created_at", { ascending: false }).limit(50);
+    if (error) { Alert.alert("خطأ", error.message); return; }
+    const rows = (data ?? []) as unknown as Saved[];
+    setSaved(rows);
+    setCur((c) => (c ? rows.find((r) => r.id === c.id) ?? null : c));
   }
+  async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
   useEffect(() => { load(); }, []);
 
-  function pick(t: Template) { setTpl(t); setStep(0); setValues({}); setOut(""); setSavedId(null); }
+  function pick(t: Template) { setTpl(t); setStep(0); setValues({}); setCur(null); }
   const set = (k: string, v: string) => setValues((x) => ({ ...x, [k]: v }));
 
   const last = step === tpl.steps.length;
 
   async function generate() {
-    setOut(""); setSavedId(null); setBusy(true);
+    setCur(null); setBusy(true);
     const details = tpl.steps.flatMap((st) => st.fields).map((f) => `- ${f.en}: ${values[f.key]?.trim() || "[to be completed]"}`).join("\n");
     const langLine = outLang === "ar" ? "Write the entire contract in formal Arabic legal drafting (العربية الفصحى القانونية)."
       : outLang === "en" ? "Write the contract in English, noting the Arabic version prevails before Saudi authorities."
@@ -161,24 +185,15 @@ ${langLine}
 
 Details:
 ${details}`;
-    try {
-      await streamChat([{ role: "user", content: prompt }], { mode: `contract: Saudi ${tpl.en}`, jurisdiction: "Saudi Arabia" }, (d) => setOut((o) => o + d));
-    } catch (e) { Alert.alert("خطأ", (e as Error).message); }
-    finally { setBusy(false); }
-  }
-
-  async function save() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: prof } = await supabase.from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
     const firstParty = Object.entries(values).find(([k]) => k.endsWith("_name"))?.[1];
     const title = `${tpl.ar}${firstParty ? ` — ${firstParty}` : ""}`;
-    const row = { contract_type: tpl.id, title, language: outLang, inputs: values, body: out };
-    const res = savedId
-      ? await supabase.from("contracts").update(row).eq("id", savedId).select("id").single()
-      : await supabase.from("contracts").insert({ ...row, created_by: user.id, organization_id: prof?.organization_id ?? null }).select("id").single();
-    if (res.error) { Alert.alert("خطأ", res.error.message); return; }
-    setSavedId(res.data.id); Alert.alert("تم حفظ العقد"); load();
+    try {
+      // Server generates and stores the draft as pending lawyer review; only the id comes back.
+      await postJSON<{ id: string; status: Status }>("/api/contracts", { title, contract_type: tpl.id, language: outLang, inputs: values, prompt });
+      Alert.alert("تم الإرسال", "تم إرسال العقد إلى المحامي للمراجعة. ستتمكن من عرضه وتنزيله بعد اعتماده.");
+      load();
+    } catch (e) { Alert.alert("خطأ", (e as Error).message); }
+    finally { setBusy(false); }
   }
 
   function remove(id: string) {
@@ -187,7 +202,7 @@ ${details}`;
       { text: "حذف", style: "destructive", onPress: async () => {
         const { error } = await supabase.from("contracts").delete().eq("id", id);
         if (error) { Alert.alert("خطأ", error.message); return; }
-        if (id === savedId) setSavedId(null);
+        setCur((c) => (c?.id === id ? null : c));
         load();
       } },
     ]);
@@ -195,19 +210,23 @@ ${details}`;
 
   function open(sv: Saved) {
     const t = TEMPLATES.find((x) => x.id === sv.contract_type) ?? TEMPLATES[0]!;
-    setTpl(t); setValues(sv.inputs ?? {}); setOut(sv.body); setSavedId(sv.id); setStep(t.steps.length);
+    setTpl(t); setValues(sv.inputs ?? {}); setCur(sv); setStep(t.steps.length);
     if (sv.language) setOutLang(sv.language);
     scroll.current?.scrollTo({ y: 0, animated: true });
   }
 
+  const approved = cur?.status === "approved" && cur.approved_body ? cur.approved_body : "";
+
   async function exportWord() {
+    if (!approved) return;
     try {
-      await shareDocx({ title: tpl.en, markdown: out, letterhead: await loadLetterhead(), lang: outLang === "en" ? "en" : "ar" }, tpl.en.replace(/\s+/g, "-"));
+      await shareDocx({ title: tpl.en, markdown: approved, letterhead: await loadLetterhead(), lang: outLang === "en" ? "en" : "ar" }, tpl.en.replace(/\s+/g, "-"));
     } catch (e) { Alert.alert("خطأ", (e as Error).message); }
   }
 
   return (
-    <ScrollView ref={scroll} style={s.screen} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled">
+    <ScrollView ref={scroll} style={s.screen} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled"
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.teal} colors={[C.teal]} />}>
       <View style={{ gap: 4 }}>
         <Text style={{ fontSize: 12, fontWeight: "600", color: C.teal, textAlign: "left" }}>المملكة العربية السعودية</Text>
         <Text style={s.h1}>منشئ العقود السعودي</Text>
@@ -273,18 +292,38 @@ ${details}`;
       </View>
 
       <View style={[s.card, { gap: 8, minHeight: 160 }]}>
-        {out ? (
-          <>
-            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-              <Action icon="save-outline" label="حفظ" disabled={busy} onPress={save} />
-              <Action icon="share-outline" label="مشاركة النص" disabled={busy} onPress={() => Share.share({ message: out })} />
-              <Action icon="download-outline" label="Word (.docx)" disabled={busy} onPress={exportWord} />
-            </View>
-            {/* ponytail: raw markdown text; add a markdown renderer if users ask for formatted preview */}
-            <Text selectable style={[s.text, { lineHeight: 26, writingDirection: outLang === "en" ? "ltr" : "rtl" }]}>{out}</Text>
-          </>
+        {busy ? (
+          <View style={{ alignItems: "center", gap: 10, paddingVertical: 24 }}>
+            <ActivityIndicator color={C.teal} />
+            <Text style={s.muted}>جارٍ إنشاء العقد وإرساله للمحامي للمراجعة…</Text>
+          </View>
+        ) : !cur ? (
+          <Text style={s.muted}>بعد الإنشاء يُرسل العقد إلى محامٍ لمراجعته، ويمكنك فتحه من قائمة العقود أدناه بعد اعتماده.</Text>
         ) : (
-          <Text style={s.muted}>سيظهر العقد هنا.</Text>
+          <>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Text style={{ flex: 1, fontSize: 15, fontWeight: "600", color: C.navy, textAlign: "left" }}>{cur.title}</Text>
+              <Badge status={cur.status} />
+            </View>
+            {approved ? (
+              <>
+                <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                  <Action icon="share-outline" label="مشاركة النص" onPress={() => Share.share({ message: approved })} />
+                  <Action icon="download-outline" label="Word (.docx)" onPress={exportWord} />
+                </View>
+                {/* ponytail: raw markdown text; add a markdown renderer if users ask for formatted preview */}
+                <Text selectable style={[s.text, { lineHeight: 26, writingDirection: cur.language === "en" ? "ltr" : "rtl" }]}>{approved}</Text>
+              </>
+            ) : cur.status === "rejected" ? (
+              <>
+                <Text style={s.text}>رفض المحامي هذا العقد.</Text>
+                {cur.review_note ? <Text style={[s.text, { color: C.danger }]}>ملاحظة المحامي: {cur.review_note}</Text> : null}
+                <Text style={s.muted}>يمكنك تعديل البيانات أعلاه وإنشاء العقد مرة أخرى.</Text>
+              </>
+            ) : (
+              <Text style={s.muted}>العقد قيد مراجعة المحامي. ستتمكن من عرضه وتنزيله بعد اعتماده. اسحب الشاشة للأسفل لتحديث الحالة.</Text>
+            )}
+          </>
         )}
         <Text style={[s.muted, { fontStyle: "italic", marginTop: 12 }]}>ميثاق ليس بديلاً عن محامٍ مرخّص. راجع العقد قبل التوقيع.</Text>
       </View>
@@ -301,6 +340,7 @@ ${details}`;
                 <Text style={{ fontSize: 14, fontWeight: "500", color: C.navy, textAlign: "left" }}>{sv.title}</Text>
                 <Text style={s.muted}>{new Date(sv.created_at).toLocaleDateString("ar-SA")}</Text>
               </Pressable>
+              <Badge status={sv.status} />
               <Pressable accessibilityLabel="حذف" hitSlop={8} onPress={() => remove(sv.id)} style={{ padding: 6 }}>
                 <Ionicons name="trash-outline" size={18} color={C.muted} />
               </Pressable>

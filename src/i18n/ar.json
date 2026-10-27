@@ -61,6 +61,8 @@
   "app.chat": "المحادثة",
   "app.workflows": "مسارات العمل",
   "app.audit": "مدقق العقود",
+  "app.review": "مراجعة العقود",
+  "app.groupReview": "المراجعة القانونية",
   "app.contracts": "العقود السعودية",
   "app.matters": "القضايا",
   "app.clients": "جهات الاتصال والعملاء",

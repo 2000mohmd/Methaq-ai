@@ -61,6 +61,8 @@
   "app.chat": "Chat",
   "app.workflows": "Workflows",
   "app.audit": "Contract Auditor",
+  "app.review": "Contract review",
+  "app.groupReview": "Legal review",
   "app.contracts": "Saudi Contracts",
   "app.matters": "Legal matters",
   "app.clients": "Contacts & clients",

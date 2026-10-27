@@ -120,6 +120,10 @@ export type Database = {
           organization_id: string | null
           title: string
           updated_at: string
+          status: string
+          approved_body: string | null
+          review_note: string | null
+          reviewed_at: string | null
         }
         Insert: {
           body?: string
@@ -875,6 +879,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_reviewer: { Args: never; Returns: boolean }
+      review_queue: {
+        Args: never
+        Returns: {
+          id: string; created_by: string; title: string; contract_type: string; language: string; inputs: Json
+          body: string; status: string; approved_body: string | null; review_note: string | null
+          reviewed_at: string | null; created_at: string; author_email: string | null
+        }[]
+      }
+      review_contract: { Args: { _id: string; _decision: string; _body: string; _note: string }; Returns: undefined }
       claim_invitations: { Args: never; Returns: number }
       current_org_id: { Args: never; Returns: string }
       has_org_role: {

@@ -20,6 +20,7 @@ import { Route as SecurityRouteImport } from './routes/security'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ApiAuditRouteImport } from './routes/api/audit'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
+import { Route as ApiContractsRouteImport } from './routes/api/contracts'
 import { Route as ApiOcrRouteImport } from './routes/api/ocr'
 import { Route as AppIndexRouteImport } from './routes/app/index'
 import { Route as AppAdminRouteImport } from './routes/app/admin'
@@ -37,6 +38,7 @@ import { Route as AppLeadsRouteImport } from './routes/app/leads'
 import { Route as AppLibraryRouteImport } from './routes/app/library'
 import { Route as AppMattersRouteImport } from './routes/app/matters'
 import { Route as AppPortalRouteImport } from './routes/app/portal'
+import { Route as AppReviewRouteImport } from './routes/app/review'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppTasksRouteImport } from './routes/app/tasks'
 import { Route as AppTimeRouteImport } from './routes/app/time'
@@ -95,6 +97,11 @@ const ApiAuditRoute = ApiAuditRouteImport.update({
 const ApiChatRoute = ApiChatRouteImport.update({
   id: '/api/chat',
   path: '/api/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiContractsRoute = ApiContractsRouteImport.update({
+  id: '/api/contracts',
+  path: '/api/contracts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOcrRoute = ApiOcrRouteImport.update({
@@ -182,6 +189,11 @@ const AppPortalRoute = AppPortalRouteImport.update({
   path: '/portal',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReviewRoute = AppReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -215,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/contracts': typeof ApiContractsRoute
   '/api/ocr': typeof ApiOcrRoute
   '/app/admin': typeof AppAdminRoute
   '/app/audit': typeof AppAuditRoute
@@ -231,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
   '/app/portal': typeof AppPortalRoute
+  '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
@@ -248,6 +262,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/contracts': typeof ApiContractsRoute
   '/api/ocr': typeof ApiOcrRoute
   '/app/admin': typeof AppAdminRoute
   '/app/audit': typeof AppAuditRoute
@@ -264,6 +279,7 @@ export interface FileRoutesByTo {
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
   '/app/portal': typeof AppPortalRoute
+  '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
@@ -283,6 +299,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
+  '/api/contracts': typeof ApiContractsRoute
   '/api/ocr': typeof ApiOcrRoute
   '/app/admin': typeof AppAdminRoute
   '/app/audit': typeof AppAuditRoute
@@ -299,6 +316,7 @@ export interface FileRoutesById {
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
   '/app/portal': typeof AppPortalRoute
+  '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
@@ -319,6 +337,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/audit'
     | '/api/chat'
+    | '/api/contracts'
     | '/api/ocr'
     | '/app/admin'
     | '/app/audit'
@@ -335,6 +354,7 @@ export interface FileRouteTypes {
     | '/app/library'
     | '/app/matters'
     | '/app/portal'
+    | '/app/review'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
@@ -352,6 +372,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/audit'
     | '/api/chat'
+    | '/api/contracts'
     | '/api/ocr'
     | '/app/admin'
     | '/app/audit'
@@ -368,6 +389,7 @@ export interface FileRouteTypes {
     | '/app/library'
     | '/app/matters'
     | '/app/portal'
+    | '/app/review'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
@@ -386,6 +408,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/api/audit'
     | '/api/chat'
+    | '/api/contracts'
     | '/api/ocr'
     | '/app/admin'
     | '/app/audit'
@@ -402,6 +425,7 @@ export interface FileRouteTypes {
     | '/app/library'
     | '/app/matters'
     | '/app/portal'
+    | '/app/review'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
@@ -421,6 +445,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ApiAuditRoute: typeof ApiAuditRoute
   ApiChatRoute: typeof ApiChatRoute
+  ApiContractsRoute: typeof ApiContractsRoute
   ApiOcrRoute: typeof ApiOcrRoute
 }
 
@@ -501,6 +526,13 @@ declare module '@tanstack/react-router' {
       path: '/api/chat'
       fullPath: '/api/chat'
       preLoaderRoute: typeof ApiChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/contracts': {
+      id: '/api/contracts'
+      path: '/api/contracts'
+      fullPath: '/api/contracts'
+      preLoaderRoute: typeof ApiContractsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ocr': {
@@ -622,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPortalRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/review': {
+      id: '/app/review'
+      path: '/review'
+      fullPath: '/app/review'
+      preLoaderRoute: typeof AppReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/settings': {
       id: '/app/settings'
       path: '/settings'
@@ -669,6 +708,7 @@ interface AppRouteChildren {
   AppLibraryRoute: typeof AppLibraryRoute
   AppMattersRoute: typeof AppMattersRoute
   AppPortalRoute: typeof AppPortalRoute
+  AppReviewRoute: typeof AppReviewRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTasksRoute: typeof AppTasksRoute
   AppTimeRoute: typeof AppTimeRoute
@@ -692,6 +732,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLibraryRoute: AppLibraryRoute,
   AppMattersRoute: AppMattersRoute,
   AppPortalRoute: AppPortalRoute,
+  AppReviewRoute: AppReviewRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTasksRoute: AppTasksRoute,
   AppTimeRoute: AppTimeRoute,
@@ -713,6 +754,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ApiAuditRoute: ApiAuditRoute,
   ApiChatRoute: ApiChatRoute,
+  ApiContractsRoute: ApiContractsRoute,
   ApiOcrRoute: ApiOcrRoute,
 }
 export const routeTree = rootRouteImport

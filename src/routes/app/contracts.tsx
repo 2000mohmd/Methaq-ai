@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Briefcase, Check, Copy, Download, FileSignature, Handshake, Loader2, Printer, Save, Sparkles, Trash2 } from "lucide-react";
+import { Briefcase, Check, Copy, Download, FileSignature, Handshake, Loader2, Printer, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { downloadDocx } from "@/lib/docx-export";
 import { loadLetterhead } from "@/lib/letterhead";
-import { streamAI } from "@/lib/ai-stream";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
 
@@ -101,7 +100,14 @@ const TEMPLATES: Template[] = [
   },
 ];
 
-type Saved = { id: string; title: string; contract_type: string; body: string; inputs: Record<string, string>; created_at: string };
+type Status = "pending_review" | "approved" | "rejected";
+type Saved = { id: string; title: string; contract_type: string; language: string; inputs: Record<string, string>; status: Status; approved_body: string | null; review_note: string | null; created_at: string };
+
+const STATUS: Record<Status, { ar: string; en: string; cls: string }> = {
+  pending_review: { ar: "قيد مراجعة المحامي", en: "Awaiting lawyer review", cls: "bg-amber-100 text-amber-800" },
+  approved: { ar: "معتمد", en: "Approved", cls: "bg-teal/10 text-teal" },
+  rejected: { ar: "مرفوض", en: "Rejected", cls: "bg-destructive/10 text-destructive" },
+};
 
 function ContractsPage() {
   const { lang } = useI18n();
@@ -113,20 +119,21 @@ function ContractsPage() {
   const [out, setOut] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState<Saved[]>([]);
-  const [savedId, setSavedId] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<Saved | null>(null);
 
   async function load() {
-    const { data } = await supabase.from("contracts").select("*").order("created_at", { ascending: false }).limit(50);
+    // Never select the AI draft (body): clients only see approved_body once a lawyer approves (per-instance review).
+    const { data } = await supabase.from("contracts").select("id,title,contract_type,language,inputs,status,approved_body,review_note,created_at").order("created_at", { ascending: false }).limit(50);
     setSaved((data ?? []) as unknown as Saved[]);
   }
   useEffect(() => { load(); }, []);
 
-  function pick(t: Template) { setTpl(t); setStep(0); setValues({}); setOut(""); setSavedId(null); }
+  function pick(t: Template) { setTpl(t); setStep(0); setValues({}); setOut(""); setViewing(null); }
 
   const last = step === tpl.steps.length;
 
   async function generate() {
-    setOut(""); setSavedId(null); setBusy(true);
+    setOut(""); setViewing(null); setBusy(true);
     const details = tpl.steps.flatMap((s) => s.fields).map((f) => `- ${f.en}: ${values[f.key]?.trim() || "[to be completed]"}`).join("\n");
     const langLine = outLang === "ar" ? "Write the entire contract in formal Arabic legal drafting (العربية الفصحى القانونية)."
       : outLang === "en" ? "Write the contract in English, noting the Arabic version prevails before Saudi authorities."
@@ -140,36 +147,34 @@ ${langLine}
 
 Details:
 ${details}`;
-    try {
-      await streamAI([{ role: "user", content: prompt }], { mode: `contract: Saudi ${tpl.en}`, jurisdiction: "Saudi Arabia" }, (d) => setOut((o) => o + d));
-    } catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(false); }
-  }
-
-  async function save() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const { data: prof } = await supabase.from("profiles").select("organization_id").eq("id", user.id).maybeSingle();
     const firstParty = Object.entries(values).find(([k]) => k.endsWith("_name"))?.[1];
     const title = `${ar ? tpl.ar : tpl.en}${firstParty ? ` — ${firstParty}` : ""}`;
-    const row = { contract_type: tpl.id, title, language: outLang, inputs: values, body: out };
-    const res = savedId
-      ? await supabase.from("contracts").update(row).eq("id", savedId).select("id").single()
-      : await supabase.from("contracts").insert({ ...row, created_by: user.id, organization_id: prof?.organization_id ?? null }).select("id").single();
-    if (res.error) { toast.error(res.error.message); return; }
-    setSavedId(res.data.id); toast.success(ar ? "تم حفظ العقد" : "Contract saved"); load();
+    try {
+      // Generated and stored server-side; the draft goes to a lawyer, not back to the browser.
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch("/api/contracts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token}` },
+        body: JSON.stringify({ title, contract_type: tpl.id, language: outLang, inputs: values, prompt }),
+      });
+      if (!res.ok) throw new Error((await res.text()) || "AI error");
+      toast.success(ar ? "أُرسل العقد إلى المحامي للمراجعة. ستتمكن من عرضه وتنزيله بعد اعتماده." : "Sent to our lawyer for review. You can view and download it once approved.");
+      load();
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(false); }
   }
 
   async function remove(id: string) {
     const { error } = await supabase.from("contracts").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
-    if (id === savedId) setSavedId(null);
+    if (id === viewing?.id) { setViewing(null); setOut(""); }
     load();
   }
 
   function open(s: Saved) {
     const t = TEMPLATES.find((x) => x.id === s.contract_type) ?? TEMPLATES[0]!;
-    setTpl(t); setValues(s.inputs ?? {}); setOut(s.body); setSavedId(s.id); setStep(t.steps.length);
+    setTpl(t); setValues(s.inputs ?? {}); setViewing(s); setOutLang((s.language as "ar" | "en" | "both") ?? "ar");
+    setOut(s.status === "approved" ? s.approved_body ?? "" : ""); setStep(t.steps.length);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -265,7 +270,6 @@ ${details}`;
           {out ? (
             <>
               <div className="mb-3 flex flex-wrap justify-end gap-1 [&>button]:h-10 sm:[&>button]:h-8">
-                <Button size="sm" variant="ghost" disabled={busy} onClick={save}><Save className="size-4" /> {ar ? "حفظ" : "Save"}</Button>
                 <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(out); toast.success(ar ? "تم النسخ" : "Copied"); }}>
                   <Copy className="size-4" /> {ar ? "نسخ" : "Copy"}
                 </Button>
@@ -277,8 +281,18 @@ ${details}`;
                 <ReactMarkdown>{out}</ReactMarkdown>
               </div>
             </>
+          ) : busy ? (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> {ar ? "جارٍ إنشاء العقد وإرساله للمحامي للمراجعة…" : "Drafting and sending to our lawyer for review…"}</p>
+          ) : viewing?.status === "pending_review" ? (
+            <p className="text-sm text-amber-800">{ar ? "هذا العقد قيد مراجعة المحامي. ستتمكن من عرضه وتنزيله بعد اعتماده." : "This contract is with our lawyer for review. You can view and download it once approved."}</p>
+          ) : viewing?.status === "rejected" ? (
+            <div className="text-sm">
+              <p className="font-medium text-destructive">{ar ? "لم يعتمد المحامي هذا العقد." : "Our lawyer did not approve this contract."}</p>
+              {viewing.review_note && <p className="mt-2 whitespace-pre-wrap">{viewing.review_note}</p>}
+              <p className="mt-2 text-muted-foreground">{ar ? "عدّل البيانات وأنشئ العقد من جديد." : "Adjust the details and generate again."}</p>
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">{ar ? "سيظهر العقد هنا." : "Your contract will appear here."}</p>
+            <p className="text-sm text-muted-foreground">{ar ? "بعد الإنشاء يُرسل العقد إلى محامينا للمراجعة، ثم يظهر هنا بعد اعتماده." : "After generating, the contract goes to our lawyer for review and appears here once approved."}</p>
           )}
           <p className="mt-6 text-xs italic text-muted-foreground">
             {ar ? "ميثاق ليس بديلاً عن محامٍ مرخّص. راجع العقد قبل التوقيع." : "Mithaq is not a substitute for a licensed lawyer. Review before signing."}
@@ -286,15 +300,16 @@ ${details}`;
         </div>
       </div>
 
-      <h2 className="mt-10 text-lg font-semibold text-navy">{ar ? "العقود المحفوظة" : "Saved contracts"}</h2>
+      <h2 className="mt-10 text-lg font-semibold text-navy">{ar ? "عقودي" : "My contracts"}</h2>
       {saved.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">{ar ? "لا توجد عقود محفوظة بعد." : "No saved contracts yet."}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{ar ? "لا توجد عقود بعد." : "No contracts yet."}</p>
       ) : (
         <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-card">
           {saved.map((s) => (
             <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">
               <button className="min-w-0 break-words py-1 text-start text-sm font-medium text-navy hover:text-teal" onClick={() => open(s)}>{s.title}</button>
               <div className="flex shrink-0 items-center gap-1 sm:gap-3">
+                <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS[s.status].cls}`}>{ar ? STATUS[s.status].ar : STATUS[s.status].en}</span>
                 <span className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString(ar ? "ar-SA" : "en-GB")}</span>
                 <button aria-label="Delete" onClick={() => remove(s.id)} className="-me-2 p-2.5 text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
               </div>
