@@ -107,7 +107,7 @@ function Workflows() {
   }
 
   return (
-    <div className="p-6 sm:p-10">
+    <div className="p-4 sm:p-10">
       <h1 className="text-2xl font-semibold text-navy">{ar ? "سير العمل" : "Workflows"}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {ar ? "مهام قانونية جاهزة ينفذها ميثاق خطوة بخطوة." : "Ready-made legal tasks Mithaq runs for you."}
@@ -127,11 +127,11 @@ function Workflows() {
         ))}
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,380px)_1fr]">
-        <div className="grid content-start gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
+        <div className="grid content-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
           <label className="grid gap-1 text-sm">
             <span>{ar ? "الاختصاص" : "Jurisdiction"}</span>
-            <select className="h-10 rounded-lg border border-input bg-background px-3" value={juris} onChange={(e) => setJuris(e.target.value)}>
+            <select className="h-10 rounded-lg border border-input bg-background px-3 text-base sm:text-sm" value={juris} onChange={(e) => setJuris(e.target.value)}>
               {JURIS.map((j) => <option key={j}>{j}</option>)}
             </select>
           </label>
@@ -150,15 +150,15 @@ function Workflows() {
           </Button>
         </div>
 
-        <div className="min-h-64 rounded-2xl border border-border bg-card p-6">
+        <div className="min-h-64 rounded-2xl border border-border bg-card p-4 sm:p-6">
           {out ? (
             <>
               <div className="mb-3 flex justify-end">
-                <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(out); toast.success(ar ? "تم النسخ" : "Copied"); }}>
+                <Button size="sm" variant="ghost" className="h-10 sm:h-8" onClick={() => { navigator.clipboard.writeText(out); toast.success(ar ? "تم النسخ" : "Copied"); }}>
                   <Copy className="size-4" /> {ar ? "نسخ" : "Copy"}
                 </Button>
               </div>
-              <div className="text-sm leading-relaxed [&_h1]:mt-4 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-4 [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_p]:my-2 [&_table]:my-3 [&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2 [&_ul]:list-disc">
+              <div className="break-words text-sm leading-relaxed [&_pre]:overflow-x-auto [&_table]:block [&_table]:overflow-x-auto [&_h1]:mt-4 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-4 [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_p]:my-2 [&_table]:my-3 [&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2 [&_ul]:list-disc">
                 <ReactMarkdown>{out}</ReactMarkdown>
               </div>
             </>

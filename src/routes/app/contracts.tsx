@@ -186,7 +186,7 @@ ${details}`;
   }
 
   return (
-    <div className="p-6 sm:p-10">
+    <div className="p-4 sm:p-10">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal">{ar ? "المملكة العربية السعودية" : "Kingdom of Saudi Arabia"}</p>
       <h1 className="mt-1 text-2xl font-semibold text-navy">{ar ? "منشئ العقود السعودي" : "Saudi Contract Builder"}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
@@ -204,13 +204,13 @@ ${details}`;
         ))}
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,400px)_1fr]">
-        <div className="grid content-start gap-4 rounded-2xl border border-border bg-card p-5 shadow-soft">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)]">
+        <div className="grid content-start gap-4 rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
           <ol className="flex flex-wrap gap-2">
             {[...tpl.steps, { en: "Generate", ar: "الإنشاء" }].map((s, i) => (
               <li key={i}>
                 <button onClick={() => setStep(i)}
-                  className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs ${i === step ? "bg-navy text-primary-foreground" : i < step ? "bg-teal/10 text-teal" : "bg-muted text-muted-foreground"}`}>
+                  className={`flex min-h-9 items-center gap-1 rounded-full px-3 py-1 text-xs sm:min-h-0 ${i === step ? "bg-navy text-primary-foreground" : i < step ? "bg-teal/10 text-teal" : "bg-muted text-muted-foreground"}`}>
                   {i < step && <Check className="size-3" />}{ar ? s.ar : s.en}
                 </button>
               </li>
@@ -223,7 +223,7 @@ ${details}`;
                 <label key={f.key} className="grid gap-1 text-sm">
                   <span>{ar ? f.ar : f.en}</span>
                   {f.options ? (
-                    <select className="h-10 rounded-lg border border-input bg-background px-3" value={values[f.key] ?? ""}
+                    <select className="h-10 min-w-0 rounded-lg border border-input bg-background px-3 text-base sm:text-sm" value={values[f.key] ?? ""}
                       onChange={(e) => setValues({ ...values, [f.key]: e.target.value })}>
                       <option value="">—</option>
                       {f.options.map((o) => <option key={o.v} value={o.v}>{ar ? o.ar : o.en}</option>)}
@@ -244,7 +244,7 @@ ${details}`;
             <>
               <label className="grid gap-1 text-sm">
                 <span>{ar ? "لغة العقد" : "Contract language"}</span>
-                <select className="h-10 rounded-lg border border-input bg-background px-3" value={outLang} onChange={(e) => setOutLang(e.target.value as "ar" | "en" | "both")}>
+                <select className="h-10 rounded-lg border border-input bg-background px-3 text-base sm:text-sm" value={outLang} onChange={(e) => setOutLang(e.target.value as "ar" | "en" | "both")}>
                   <option value="ar">{ar ? "العربية" : "Arabic"}</option>
                   <option value="both">{ar ? "ثنائي اللغة" : "Bilingual (AR / EN)"}</option>
                   <option value="en">{ar ? "الإنجليزية" : "English"}</option>
@@ -261,10 +261,10 @@ ${details}`;
           )}
         </div>
 
-        <div className="min-h-64 rounded-2xl border border-border bg-card p-6">
+        <div className="min-h-64 min-w-0 rounded-2xl border border-border bg-card p-4 sm:p-6">
           {out ? (
             <>
-              <div className="mb-3 flex flex-wrap justify-end gap-1">
+              <div className="mb-3 flex flex-wrap justify-end gap-1 [&>button]:h-10 sm:[&>button]:h-8">
                 <Button size="sm" variant="ghost" disabled={busy} onClick={save}><Save className="size-4" /> {ar ? "حفظ" : "Save"}</Button>
                 <Button size="sm" variant="ghost" onClick={() => { navigator.clipboard.writeText(out); toast.success(ar ? "تم النسخ" : "Copied"); }}>
                   <Copy className="size-4" /> {ar ? "نسخ" : "Copy"}
@@ -273,7 +273,7 @@ ${details}`;
                 <Button size="sm" variant="ghost" disabled={busy} onClick={print}><Printer className="size-4" /> {ar ? "طباعة / PDF" : "Print / PDF"}</Button>
               </div>
               <div id="contract-output" dir={outLang === "en" ? "ltr" : "rtl"}
-                className="text-sm leading-loose [&_h1]:mt-4 [&_h1]:text-center [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-4 [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_p]:my-2 [&_ul]:list-disc">
+                className="break-words text-sm leading-loose [&_table]:block [&_table]:overflow-x-auto [&_h1]:mt-4 [&_h1]:text-center [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-4 [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_p]:my-2 [&_ul]:list-disc">
                 <ReactMarkdown>{out}</ReactMarkdown>
               </div>
             </>
@@ -293,10 +293,10 @@ ${details}`;
         <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-card">
           {saved.map((s) => (
             <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <button className="text-start text-sm font-medium text-navy hover:text-teal" onClick={() => open(s)}>{s.title}</button>
-              <div className="flex items-center gap-3">
+              <button className="min-w-0 break-words py-1 text-start text-sm font-medium text-navy hover:text-teal" onClick={() => open(s)}>{s.title}</button>
+              <div className="flex shrink-0 items-center gap-1 sm:gap-3">
                 <span className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString(ar ? "ar-SA" : "en-GB")}</span>
-                <button aria-label="Delete" onClick={() => remove(s.id)} className="text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+                <button aria-label="Delete" onClick={() => remove(s.id)} className="-me-2 p-2.5 text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
               </div>
             </li>
           ))}

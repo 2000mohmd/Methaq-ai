@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Search } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
@@ -22,6 +23,12 @@ export function HeaderSearch({ pages }: { pages: { to: string; label: string }[]
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
+  // Below sm the input is hidden behind an icon button and opens as a bar under the header.
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
 
   useEffect(() => {
     const term = q.trim();
@@ -38,8 +45,16 @@ export function HeaderSearch({ pages }: { pages: { to: string; label: string }[]
       const rows = await Promise.all(
         TABLES.map(async (t) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const { data } = await (supabase as any).from(t.table).select(t.col).ilike(t.col, `%${safe}%`).limit(4);
-          return ((data ?? []) as Record<string, string>[]).map((r) => ({ label: r[t.col] ?? "", sub: t.sub, to: t.to }));
+          const { data } = await (supabase as any)
+            .from(t.table)
+            .select(t.col)
+            .ilike(t.col, `%${safe}%`)
+            .limit(4);
+          return ((data ?? []) as Record<string, string>[]).map((r) => ({
+            label: r[t.col] ?? "",
+            sub: t.sub,
+            to: t.to,
+          }));
         }),
       );
       setHits([...pageHits, ...rows.flat()].slice(0, 10));
@@ -48,29 +63,59 @@ export function HeaderSearch({ pages }: { pages: { to: string; label: string }[]
   }, [q, pages, ar]);
 
   return (
-    <div className="relative hidden sm:block">
-      <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-      <Input className="w-64 ps-9" value={q} onChange={(e) => setQ(e.target.value)} placeholder={ar ? "بحث…" : "Search…"} />
-      {hits.length > 0 && (
-        <ul className="absolute start-0 top-full z-50 mt-1 w-80 overflow-hidden rounded-lg border border-border bg-popover shadow-lg">
-          {hits.map((h, i) => (
-            <li key={i}>
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-3 px-3 py-2 text-start text-sm hover:bg-muted"
-                onClick={() => {
-                  setQ("");
-                  setHits([]);
-                  navigate({ to: h.to });
-                }}
-              >
-                <span className="truncate">{h.label}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">{h.sub}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-10 w-10 shrink-0 sm:hidden"
+        aria-label={ar ? "بحث" : "Search"}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Search />
+      </Button>
+      <div
+        className={
+          open
+            ? "fixed inset-x-0 top-16 z-40 border-b border-border bg-background p-3 sm:static sm:border-0 sm:bg-transparent sm:p-0"
+            : "hidden sm:block"
+        }
+      >
+        <div className="relative">
+          <Search className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            ref={inputRef}
+            type="search"
+            className="h-10 w-full ps-9 sm:h-9 sm:w-64"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") setOpen(false);
+            }}
+            placeholder={ar ? "بحث…" : "Search…"}
+          />
+          {hits.length > 0 && (
+            <ul className="absolute start-0 top-full z-50 mt-1 w-full overflow-hidden rounded-lg border border-border bg-popover shadow-lg sm:w-80">
+              {hits.map((h, i) => (
+                <li key={i}>
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-start text-sm hover:bg-muted sm:py-2"
+                    onClick={() => {
+                      setQ("");
+                      setHits([]);
+                      setOpen(false);
+                      navigate({ to: h.to });
+                    }}
+                  >
+                    <span className="truncate">{h.label}</span>
+                    <span className="shrink-0 text-xs text-muted-foreground">{h.sub}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

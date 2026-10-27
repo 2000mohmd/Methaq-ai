@@ -86,10 +86,10 @@ export function RecordModule({ table, title, fields, summary, rowAction }: Props
   const filtered = rows.filter((r) => !q || JSON.stringify(r).toLowerCase().includes(q.toLowerCase()));
 
   return (
-    <div className="p-6 sm:p-10">
+    <div className="p-4 sm:p-10">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold text-navy">{ar ? title.ar : title.en}</h1>
-        <Input className="ms-auto w-56" placeholder={ar ? "بحث…" : "Search…"} value={q} onChange={(e) => setQ(e.target.value)} />
+        <Input className="order-last h-10 w-full sm:order-none sm:ms-auto sm:h-9 sm:w-56" placeholder={ar ? "بحث…" : "Search…"} value={q} onChange={(e) => setQ(e.target.value)} />
         <Button variant="outline" onClick={() => setAiOpen(true)}><Sparkles className="size-4 text-teal" /> {ar ? "اسأل الذكاء الاصطناعي" : "Ask AI"}</Button>
         <Button onClick={() => setOpen(true)}><Plus className="size-4" /> {ar ? "إضافة" : "Add"}</Button>
       </div>
@@ -108,7 +108,7 @@ export function RecordModule({ table, title, fields, summary, rowAction }: Props
       {rows.length === 0 ? (
         <div className="relative mt-6 overflow-hidden rounded-2xl border border-border bg-navy-tint">
           <HexPattern className="text-navy" opacity={0.06} />
-          <div className="relative max-w-md px-8 py-16">
+          <div className="relative max-w-md px-6 py-12 sm:px-8 sm:py-16">
             <Sparkles className="size-6 text-teal" />
             <p className="mt-4 leading-relaxed text-muted-foreground">
               {ar ? "لا توجد سجلات بعد. أضف أول سجل للبدء." : "No records yet. Add your first one to get started."}
@@ -128,18 +128,18 @@ export function RecordModule({ table, title, fields, summary, rowAction }: Props
             <tbody>
               {filtered.map((r) => (
                 <tr key={r["id"] as string} className="border-t border-border">
-                  {listFields.map((f) => <td key={f.key} className="px-4 py-3">{String(r[f.key] ?? "—")}</td>)}
+                  {listFields.map((f) => <td key={f.key} className="max-w-[16rem] break-words px-4 py-3">{String(r[f.key] ?? "—")}</td>)}
                   <td className="px-2 text-end">
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="flex items-center justify-end gap-1">
                       {rowAction && !rowAction.hidden?.(r) && (
                         <button
                           onClick={() => rowAction.onClick(r)}
-                          className="text-xs font-medium text-teal hover:underline"
+                          className="whitespace-nowrap px-2 py-2.5 text-xs font-medium text-teal hover:underline"
                         >
                           {ar ? rowAction.ar : rowAction.en}
                         </button>
                       )}
-                      <button onClick={() => remove(r["id"] as string)} aria-label="Delete"><Trash2 className="size-4 text-muted-foreground hover:text-destructive" /></button>
+                      <button className="p-2.5" onClick={() => remove(r["id"] as string)} aria-label="Delete"><Trash2 className="size-4 text-muted-foreground hover:text-destructive" /></button>
                     </div>
                   </td>
                 </tr>
@@ -150,14 +150,14 @@ export function RecordModule({ table, title, fields, summary, rowAction }: Props
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader><DialogTitle>{ar ? "سجل جديد" : "New record"}</DialogTitle></DialogHeader>
           <div className="grid gap-3">
             {fields.map((f) => (
               <label key={f.key} className="grid gap-1 text-sm">
                 <span>{ar ? f.ar : f.en}{f.required && " *"}</span>
                 {f.type === "select" ? (
-                  <select className="h-10 rounded-lg border border-input bg-background px-3" value={form[f.key] ?? ""}
+                  <select className="h-10 rounded-lg border border-input bg-background px-3 text-base sm:text-sm" value={form[f.key] ?? ""}
                     onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}>
                     <option value="" />
                     {f.options!.map((o) => <option key={o}>{o}</option>)}

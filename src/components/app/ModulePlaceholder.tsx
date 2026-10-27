@@ -4,7 +4,7 @@ import { useI18n } from "@/i18n";
 export function ModulePlaceholder({ titleKey }: { titleKey: string }) {
   const { t } = useI18n();
   return (
-    <div className="p-6 sm:p-10">
+    <div className="p-4 sm:p-10">
       <h1 className="text-2xl font-semibold text-navy">{t(titleKey)}</h1>
       <div className="relative mt-6 overflow-hidden rounded-2xl border border-border bg-navy-tint">
         <HexPattern className="text-navy" opacity={0.06} />

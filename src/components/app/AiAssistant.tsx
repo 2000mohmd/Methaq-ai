@@ -60,7 +60,7 @@ export function AiAssistant({ open, onOpenChange, module, moduleAr, context, sug
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[85vh] max-w-2xl flex-col">
+      <DialogContent className="flex max-h-[85dvh] max-w-2xl flex-col p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <LogoMark className="size-5" />
@@ -81,7 +81,7 @@ export function AiAssistant({ open, onOpenChange, module, moduleAr, context, sug
                   <button
                     key={s.en}
                     onClick={() => ask(ar ? s.ar : s.en)}
-                    className="rounded-full border border-border px-3 py-1.5 text-xs text-navy transition-colors hover:border-teal hover:text-teal"
+                    className="min-h-10 rounded-full border border-border px-3 py-1.5 text-start text-xs text-navy sm:min-h-0 transition-colors hover:border-teal hover:text-teal"
                   >
                     {ar ? s.ar : s.en}
                   </button>
@@ -94,8 +94,8 @@ export function AiAssistant({ open, onOpenChange, module, moduleAr, context, sug
               <div
                 className={
                   m.role === "user"
-                    ? "max-w-[85%] rounded-2xl bg-navy px-4 py-2.5 text-sm text-white"
-                    : "max-w-[95%] text-sm leading-relaxed"
+                    ? "max-w-[85%] whitespace-pre-wrap break-words rounded-2xl bg-navy px-4 py-2.5 text-sm text-white"
+                    : "min-w-0 max-w-[95%] break-words text-sm leading-relaxed [&_pre]:overflow-x-auto [&_table]:block [&_table]:overflow-x-auto"
                 }
               >
                 {m.role === "user" ? (
@@ -127,7 +127,7 @@ export function AiAssistant({ open, onOpenChange, module, moduleAr, context, sug
             className="min-h-10 resize-none"
             rows={1}
           />
-          <Button size="icon" onClick={() => ask(input)} disabled={busy || !input.trim()} aria-label="Send">
+          <Button size="icon" className="h-10 w-10 shrink-0" onClick={() => ask(input)} disabled={busy || !input.trim()} aria-label="Send">
             {busy ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
           </Button>
         </div>

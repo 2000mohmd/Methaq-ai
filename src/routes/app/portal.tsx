@@ -40,22 +40,24 @@ function Portal() {
     rows.length === 0 ? (
       <p className="mt-3 text-sm text-muted-foreground">{ar ? "لا شيء بعد." : "Nothing yet."}</p>
     ) : (
-      <table className="mt-3 w-full text-sm">
-        <tbody>
-          {rows.map((r) => (
-            <tr key={String(r["id"])} className="border-t border-border">
-              {cols.map((c) => <td key={c} className="py-2">{String(r[c] ?? "—")}</td>)}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm">
+          <tbody>
+            {rows.map((r) => (
+              <tr key={String(r["id"])} className="border-t border-border">
+                {cols.map((c) => <td key={c} className="py-2 pe-3 last:pe-0">{String(r[c] ?? "—")}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
 
   return (
-    <div className="grid gap-6 p-6 sm:p-10">
+    <div className="grid grid-cols-1 gap-6 p-4 sm:p-10">
       <div>
         <h1 className="text-2xl font-semibold text-navy">{ar ? "بوابة العميل" : "Client portal"}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 break-words text-sm text-muted-foreground">
           {ar
             ? `يرى الموكّل هنا قضاياه وفواتيره عندما يطابق بريده (${email}) بريد سجلّه لدى المكتب.`
             : `Clients see their own matters and invoices here when their sign-in email (${email}) matches their client record at the firm.`}

@@ -51,10 +51,10 @@ function Settings() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6 sm:p-10">
+    <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-10">
       <h1 className="text-2xl font-semibold text-navy">{ar ? "الإعدادات" : "Settings"}</h1>
 
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-6">
         <div className="space-y-2">
           <Label htmlFor="name">{ar ? "الاسم الكامل" : "Full name"}</Label>
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -69,7 +69,7 @@ function Settings() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-6">
         <div>
           <p className="mb-2 text-sm text-muted-foreground">{ar ? "اللغة" : "Language"}</p>
           <div className="flex gap-3">
@@ -92,13 +92,13 @@ function Settings() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-soft">
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-6">
         <div>
           <h2 className="font-semibold text-navy">{ar ? "ترويسة المكتب (للمستندات المصدّرة)" : "Firm letterhead (for exported documents)"}</h2>
           <p className="mt-1 text-xs text-muted-foreground">{ar ? "تظهر في أعلى كل ملف Word مع التاريخ الهجري والميلادي." : "Shown at the top of every Word export, with the Hijri and Gregorian date."}</p>
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={lh.logo !== false} onChange={(e) => setLh({ ...lh, logo: e.target.checked })} />
+        <label className="flex min-h-10 items-center gap-2 text-sm">
+          <input type="checkbox" className="size-4 shrink-0" checked={lh.logo !== false} onChange={(e) => setLh({ ...lh, logo: e.target.checked })} />
           {ar ? "إظهار شعار ميثاق العربية في الترويسة" : "Show the Mithaq Alarabia logo in the header"}
         </label>
         {([

@@ -22,7 +22,7 @@ function Workspace() {
   }, []);
 
   return (
-    <div className="p-6 sm:p-10">
+    <div className="p-4 sm:p-10">
       <div className="relative overflow-hidden rounded-2xl bg-navy p-8 text-white sm:p-12">
         <HexPattern className="text-white" opacity={0.1} />
         <div className="relative max-w-xl">

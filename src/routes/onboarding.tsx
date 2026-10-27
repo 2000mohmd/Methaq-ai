@@ -139,15 +139,15 @@ function Onboarding() {
     });
 
   return (
-    <div className="relative min-h-screen bg-navy-tint">
+    <div className="relative min-h-dvh bg-navy-tint">
       <HexPattern className="text-navy" opacity={0.05} />
-      <div className="relative mx-auto flex min-h-screen max-w-2xl flex-col px-6 py-10">
-        <div className="flex items-center justify-between">
+      <div className="relative mx-auto flex min-h-dvh max-w-2xl flex-col px-4 py-6 sm:px-6 sm:py-10">
+        <div className="flex items-center justify-between gap-3">
           <LogoLockup tone="navy" />
-          <LanguageToggle />
+          <LanguageToggle className="h-10" />
         </div>
 
-        <div className="mt-12 flex-1">
+        <div className="mt-8 flex-1 sm:mt-12">
           <p className="brand-caps text-xs text-teal">
             {t("onboarding.step")} {n(step + 1)} {t("onboarding.of")} {n(steps)}
           </p>
@@ -155,7 +155,7 @@ function Onboarding() {
             {t("onboarding.title")}
           </h1>
 
-          <div className="mt-8 rounded-2xl border border-border bg-card p-8 shadow-soft">
+          <div className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-soft sm:mt-8 sm:p-8">
             {step === 0 && (
               <div className="space-y-4">
                 <h2 className="font-semibold text-navy">{t("onboarding.roleQ")}</h2>
@@ -205,7 +205,7 @@ function Onboarding() {
                       type="button"
                       onClick={() => toggle(j)}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors",
+                        "inline-flex min-h-10 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors sm:min-h-0",
                         selected.includes(j)
                           ? "border-teal bg-teal text-navy"
                           : "border-border text-muted-foreground hover:border-teal/50",
@@ -265,7 +265,7 @@ function Onboarding() {
             )}
           </div>
 
-          <div className="mt-6 flex justify-between">
+          <div className="mt-6 flex justify-between [&>button]:h-11 sm:[&>button]:h-9">
             <Button
               variant="ghost"
               onClick={() => go(-1)}

@@ -92,10 +92,10 @@ function Emails() {
   };
 
   return (
-    <div className="p-6 sm:p-10">
+    <div className="p-4 sm:p-10">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold text-navy">{ar ? "البريد" : "Emails"}</h1>
-        <Input className="ms-auto w-56" placeholder={ar ? "بحث…" : "Search…"} />
+        <Input className="order-last h-10 w-full sm:order-none sm:ms-auto sm:h-9 sm:w-56" placeholder={ar ? "بحث…" : "Search…"} />
         <Button variant="outline" onClick={() => setAiOpen(true)}>
           <Sparkles className="size-4 text-teal" /> {ar ? "اسأل الذكاء الاصطناعي" : "Ask AI"}
         </Button>
@@ -107,7 +107,7 @@ function Emails() {
       {rows.length === 0 ? (
         <div className="relative mt-6 overflow-hidden rounded-2xl border border-border bg-navy-tint">
           <HexPattern className="text-navy" opacity={0.06} />
-          <div className="relative max-w-md px-8 py-16">
+          <div className="relative max-w-md px-6 py-12 sm:px-8 sm:py-16">
             <Mail className="size-6 text-teal" />
             <p className="mt-4 leading-relaxed text-muted-foreground">
               {ar
@@ -148,11 +148,11 @@ function Emails() {
                       {r.status === "sent" ? (ar ? "أُرسلت" : "Sent") : ar ? "فشلت" : "Failed"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
+                  <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                     {new Date(r.created_at).toLocaleString(ar ? "ar" : "en")}
                   </td>
                   <td className="px-2 text-end">
-                    <button onClick={() => remove(r.id)} aria-label="Delete">
+                    <button className="p-2.5" onClick={() => remove(r.id)} aria-label="Delete">
                       <Trash2 className="size-4 text-muted-foreground hover:text-destructive" />
                     </button>
                   </td>
@@ -164,7 +164,7 @@ function Emails() {
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{ar ? "رسالة جديدة" : "Compose email"}</DialogTitle>
           </DialogHeader>
@@ -185,7 +185,7 @@ function Emails() {
             <label className="grid gap-1 text-sm">
               <span>{ar ? "نص الرسالة" : "Message"} *</span>
               <textarea
-                className="min-h-36 rounded-lg border border-input bg-background px-3 py-2"
+                className="min-h-36 rounded-lg border border-input bg-background px-3 py-2 text-base sm:text-sm"
                 value={form.body}
                 onChange={(e) => setForm({ ...form, body: e.target.value })}
               />

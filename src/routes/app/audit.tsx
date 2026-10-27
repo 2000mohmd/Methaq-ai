@@ -109,7 +109,7 @@ function AuditPage() {
   }
 
   return (
-    <div className="p-6 sm:p-10">
+    <div className="p-4 sm:p-10">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-teal">{ar ? "المملكة العربية السعودية" : "Kingdom of Saudi Arabia"}</p>
       <h1 className="mt-1 text-2xl font-semibold text-navy">{ar ? "مدقق العقود والامتثال السعودي" : "Contract Redlining & Saudi Compliance Auditor"}</h1>
       <p className="mt-1 text-sm text-muted-foreground">
@@ -152,7 +152,7 @@ function AuditPage() {
 
       <ul className="mt-6 grid gap-4">
         {results.map((r) => (
-          <li key={r.n} className={cn("rounded-2xl border p-5", RISK_STYLE[r.risk])}>
+          <li key={r.n} className={cn("rounded-2xl border p-4 sm:p-5", RISK_STYLE[r.risk])}>
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-semibold text-navy">{ar ? "البند" : "Clause"} {r.n}</span>
               <span className="inline-flex items-center gap-1 text-xs font-medium">
@@ -160,7 +160,7 @@ function AuditPage() {
                 {ar ? RISK_LABEL[r.risk].ar : RISK_LABEL[r.risk].en}
               </span>
             </div>
-            <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{clauses.find((c) => c.n === r.n)?.text}</p>
+            <p className="mt-2 whitespace-pre-wrap break-words text-sm text-muted-foreground">{clauses.find((c) => c.n === r.n)?.text}</p>
             {r.issue && <p className="mt-3 text-sm">{r.issue}</p>}
             {r.sources.length > 0 ? (
               <p className="mt-2 text-xs text-teal">
@@ -175,8 +175,8 @@ function AuditPage() {
             {r.redline && (
               <div className="mt-3 rounded-xl border border-border bg-background p-3">
                 <p className="text-xs font-semibold text-navy">{ar ? "الصياغة المقترحة" : "Suggested redline"}</p>
-                <p className="mt-1 whitespace-pre-wrap text-sm">{r.redline}</p>
-                <Button size="sm" variant={accepted.has(r.n) ? "default" : "outline"} className="mt-2" onClick={() => toggle(r.n)}>
+                <p className="mt-1 whitespace-pre-wrap break-words text-sm">{r.redline}</p>
+                <Button size="sm" variant={accepted.has(r.n) ? "default" : "outline"} className="mt-2 h-10 sm:h-8" onClick={() => toggle(r.n)}>
                   <Check className="size-4" /> {accepted.has(r.n) ? (ar ? "تم القبول" : "Accepted") : (ar ? "قبول التعديل" : "Accept redline")}
                 </Button>
               </div>

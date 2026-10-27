@@ -56,15 +56,15 @@ function Landing() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b border-border/70 bg-background/85 backdrop-blur">
-        <div className="mx-auto flex h-18 max-w-6xl items-center justify-between px-6 py-3">
-          <Link to="/" aria-label={t("brand.name")}>
+        <div className="mx-auto flex h-18 max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6">
+          <Link to="/" aria-label={t("brand.name")} className="shrink-0">
             <LogoLockup tone="navy" className="hidden sm:inline-flex" />
             <LogoMark className="sm:hidden" />
           </Link>
           <MarketingNav />
-          <div className="flex items-center gap-2">
-            <LanguageToggle />
-            <Button variant="ghost" size="sm" asChild>
+          <div className="flex items-center gap-1 sm:gap-2 [&>*]:h-10 sm:[&>*]:h-8">
+            <LanguageToggle className="px-2.5 sm:px-3" />
+            <Button variant="ghost" size="sm" className="px-2.5 sm:px-3" asChild>
               <Link to="/auth">{t("nav.signin")}</Link>
             </Button>
             <Button size="sm" asChild>
@@ -85,7 +85,7 @@ function Landing() {
           height={1200}
           className="absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-luminosity"
         />
-        <div className="relative mx-auto grid max-w-6xl gap-10 px-6 py-24 md:py-32">
+        <div className="relative mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-24 md:py-32">
           <div className="max-w-2xl">
             <p className="brand-caps text-xs text-teal">{t("home.heroKicker")}</p>
             <h1 className="mt-6 text-4xl leading-tight font-semibold md:text-6xl">
@@ -112,19 +112,19 @@ function Landing() {
         </div>
       </section>
 
-      <section id="products" className="mx-auto max-w-6xl px-6 py-24">
+      <section id="products" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24">
         <h2 className="text-3xl font-semibold text-navy md:text-4xl">
           {t("home.products")}
         </h2>
         <div className="mt-12 grid gap-6 md:grid-cols-2">
-          <article className="rounded-2xl border border-border bg-card p-8 shadow-soft transition-shadow hover:shadow-lift">
+          <article className="rounded-2xl border border-border bg-card p-6 shadow-soft sm:p-8 transition-shadow hover:shadow-lift">
             <ScrollText className="size-7 text-teal" />
             <h3 className="mt-5 text-xl font-semibold text-navy">{t("nav.chat")}</h3>
             <p className="mt-3 leading-relaxed text-muted-foreground">
               {t("home.chatDesc")}
             </p>
           </article>
-          <article className="rounded-2xl border border-border bg-card p-8 shadow-soft transition-shadow hover:shadow-lift">
+          <article className="rounded-2xl border border-border bg-card p-6 shadow-soft sm:p-8 transition-shadow hover:shadow-lift">
             <Building2 className="size-7 text-teal" />
             <h3 className="mt-5 text-xl font-semibold text-navy">{t("nav.efirm")}</h3>
             <p className="mt-3 leading-relaxed text-muted-foreground">
@@ -135,7 +135,7 @@ function Landing() {
       </section>
 
       <section className="border-y border-border bg-navy-tint">
-        <div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-24 md:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 py-16 sm:px-6 sm:py-24 md:grid-cols-2">
           <div>
             <p className="brand-caps text-xs text-teal">{t("home.about")}</p>
             <p className="mt-6 text-xl leading-relaxed text-navy md:text-2xl">
@@ -156,7 +156,7 @@ function Landing() {
 
       <footer className="relative overflow-hidden bg-navy text-white/70">
         <HexPattern className="text-white" opacity={0.07} />
-        <div className="relative mx-auto flex max-w-6xl flex-col gap-6 px-6 py-14 sm:flex-row sm:items-end sm:justify-between">
+        <div className="relative mx-auto flex max-w-6xl flex-col gap-6 px-4 py-14 sm:flex-row sm:px-6 sm:items-end sm:justify-between">
           <div>
             <LogoLockup tone="white" />
             <p className="mt-5 text-sm">www.mithaqalarabia.com</p>

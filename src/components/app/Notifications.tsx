@@ -51,12 +51,12 @@ export function Notifications() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label={ar ? "الإشعارات" : "Notifications"}>
+        <Button variant="ghost" size="icon" className="relative h-10 w-10" aria-label={ar ? "الإشعارات" : "Notifications"}>
           <Bell />
           {items.length > 0 && <span className="absolute end-1.5 top-1.5 size-2 rounded-full bg-teal" />}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
+      <DropdownMenuContent align="end" className="w-80 max-w-[calc(100vw-1.5rem)]">
         <DropdownMenuLabel>{ar ? "الإشعارات" : "Notifications"}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {items.length === 0 ? (

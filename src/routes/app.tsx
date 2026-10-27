@@ -178,10 +178,10 @@ function AppShell() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex h-dvh overflow-hidden bg-background">
       <aside
         className={cn(
-          "fixed inset-y-0 z-50 flex w-72 shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-transform lg:static lg:h-screen lg:translate-x-0",
+          "fixed inset-y-0 start-0 z-50 flex w-72 max-w-[85vw] shrink-0 flex-col overflow-hidden bg-sidebar text-sidebar-foreground transition-transform lg:static lg:h-dvh lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full rtl:translate-x-full",
           "lg:rtl:translate-x-0",
         )}
@@ -209,7 +209,7 @@ function AppShell() {
                     <Link
                       to={item.to}
                       onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm lg:py-2 text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                       activeProps={{
                         className:
                           "bg-sidebar-accent text-sidebar-accent-foreground border-s-2 border-sidebar-primary",
@@ -243,11 +243,12 @@ function AppShell() {
       )}
 
       <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-2 border-b border-border bg-background/90 px-3 backdrop-blur sm:gap-3 sm:px-6">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="h-10 w-10 shrink-0 lg:hidden"
+            aria-label="menu"
             onClick={() => setMobileOpen(true)}
           >
             <LayoutGrid />
@@ -255,16 +256,16 @@ function AppShell() {
 
           <HeaderSearch pages={navPages} />
 
-          <div className="ms-auto flex items-center gap-1.5">
+          <div className="ms-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
             <Link to="/pricing" className="hidden items-center gap-1.5 rounded-full border border-border px-3 py-1 text-xs text-muted-foreground hover:border-teal sm:inline-flex">
               <Coins className="size-3.5 text-teal" />
               {t("app.credits")}
             </Link>
-            <LanguageToggle />
+            <LanguageToggle className="h-10 px-2.5 sm:h-8 sm:px-3" />
             <Notifications />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label={t("app.profile")}>
+                <Button variant="ghost" size="icon" className="h-10 w-10" aria-label={t("app.profile")}>
                   <UserRound />
                 </Button>
               </DropdownMenuTrigger>

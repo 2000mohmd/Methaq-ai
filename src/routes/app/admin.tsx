@@ -95,10 +95,10 @@ function Admin() {
     }
   }
 
-  if (isAdmin === null) return <div className="p-10 text-sm text-muted-foreground">…</div>;
+  if (isAdmin === null) return <div className="p-4 text-sm text-muted-foreground sm:p-10">…</div>;
   if (!isAdmin)
     return (
-      <div className="p-10">
+      <div className="p-4 sm:p-10">
         <ShieldCheck className="size-6 text-teal" />
         <p className="mt-3 text-muted-foreground">{ar ? "هذه الصفحة متاحة لمالكي ومسؤولي المكتب فقط." : "Only firm owners and admins can open this page."}</p>
       </div>
@@ -107,7 +107,7 @@ function Admin() {
   const nameOf = (id: string | null) => members.find((m) => m.id === id)?.full_name || members.find((m) => m.id === id)?.email || "—";
 
   return (
-    <div className="grid gap-6 p-6 sm:p-10">
+    <div className="grid grid-cols-1 gap-6 p-4 sm:p-10">
       <h1 className="text-2xl font-semibold text-navy">{ar ? "لوحة الإدارة" : "Admin console"}</h1>
 
       <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
@@ -120,18 +120,19 @@ function Admin() {
 
       <section className="rounded-2xl border border-border bg-card p-5 shadow-soft">
         <h2 className="font-semibold text-navy">{ar ? "الفريق والأدوار" : "Team & roles"}</h2>
-        <table className="mt-3 w-full text-sm">
+        <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm">
           <tbody>
             {members.map((m) => (
               <tr key={m.id} className="border-t border-border">
-                <td className="py-2">{m.full_name || m.email}</td>
-                <td className="py-2 text-muted-foreground">{m.email}</td>
+                <td className="py-2 pe-3">{m.full_name || m.email}</td>
+                <td className="py-2 pe-3 text-muted-foreground">{m.email}</td>
                 <td className="py-2">
                   {roles.filter((r) => r.user_id === m.id).map((r) => (
                     <span key={r.id} className="me-2 inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-xs">
                       {r.role}
                       {m.id !== me && (
-                        <button onClick={() => removeRole(r.id)} aria-label="Remove role"><Trash2 className="size-3 text-muted-foreground hover:text-destructive" /></button>
+                        <button className="-my-1.5 -me-1.5 p-1.5" onClick={() => removeRole(r.id)} aria-label="Remove role"><Trash2 className="size-3 text-muted-foreground hover:text-destructive" /></button>
                       )}
                     </span>
                   ))}
@@ -140,12 +141,13 @@ function Admin() {
             ))}
           </tbody>
         </table>
+        </div>
 
         <h3 className="mt-5 font-medium text-navy">{ar ? "دعوة عضو جديد" : "Invite a new member"}</h3>
         <div className="mt-2 flex max-w-lg flex-wrap gap-2">
-          <Input className="min-w-52 flex-1" type="email" placeholder={ar ? "البريد الإلكتروني" : "Email"}
+          <Input className="h-10 w-full sm:h-9 sm:w-auto sm:min-w-52 sm:flex-1" type="email" placeholder={ar ? "البريد الإلكتروني" : "Email"}
             value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
-          <select className="h-10 rounded-lg border border-input bg-background px-3" value={inviteRole}
+          <select className="h-10 flex-1 rounded-lg border border-input bg-background px-3 text-base sm:flex-none sm:text-sm" value={inviteRole}
             onChange={(e) => setInviteRole(e.target.value)}>
             <option value="user">{ar ? "عضو" : "Member"}</option>
             <option value="admin">{ar ? "مسؤول" : "Admin"}</option>
@@ -161,12 +163,13 @@ function Admin() {
             : "The invitation is sent by email; the new member creates their account from the link inside it."}
         </p>
         {invites.length > 0 && (
-          <table className="mt-4 w-full text-sm">
+          <div className="mt-4 overflow-x-auto">
+          <table className="w-full text-sm">
             <tbody>
               {invites.map((iv) => (
                 <tr key={iv.id} className="border-t border-border">
-                  <td className="py-2">{iv.email}</td>
-                  <td className="py-2 text-muted-foreground">{iv.role}</td>
+                  <td className="py-2 pe-3">{iv.email}</td>
+                  <td className="py-2 pe-3 text-muted-foreground">{iv.role}</td>
                   <td className="py-2">
                     <span className={"rounded-full px-2 py-0.5 text-xs " + (iv.status === "sent" ? "bg-teal/10 text-teal" : "bg-destructive/10 text-destructive")}>
                       {iv.status === "sent" ? (ar ? "أُرسلت" : "Sent") : ar ? "فشلت" : "Failed"}
@@ -176,6 +179,7 @@ function Admin() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 
@@ -184,14 +188,14 @@ function Admin() {
         {logs.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">{ar ? "لا توجد أحداث بعد." : "No activity yet."}</p>
         ) : (
-          <div className="mt-3 max-h-96 overflow-y-auto">
+          <div className="mt-3 max-h-96 overflow-auto">
             <table className="w-full text-sm">
               <tbody>
                 {logs.map((l) => (
                   <tr key={l.id} className="border-t border-border">
-                    <td className="py-2 text-muted-foreground">{new Date(l.created_at).toLocaleString(ar ? "ar" : "en")}</td>
-                    <td className="py-2">{nameOf(l.user_id)}</td>
-                    <td className="py-2">{l.action}</td>
+                    <td className="whitespace-nowrap py-2 pe-3 text-muted-foreground">{new Date(l.created_at).toLocaleString(ar ? "ar" : "en")}</td>
+                    <td className="py-2 pe-3">{nameOf(l.user_id)}</td>
+                    <td className="py-2 pe-3">{l.action}</td>
                     <td className="py-2 text-muted-foreground">{l.resource ?? ""}</td>
                   </tr>
                 ))}

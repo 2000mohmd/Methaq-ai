@@ -111,7 +111,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <div className="grid min-h-dvh lg:grid-cols-2">
       <aside className="relative hidden overflow-hidden bg-navy p-12 text-white lg:flex lg:flex-col lg:justify-between">
         <HexPattern className="text-white" opacity={0.12} />
         <Link to="/" className="relative">
@@ -125,17 +125,17 @@ function AuthPage() {
         </div>
       </aside>
 
-      <main className="flex flex-col px-6 py-10 sm:px-12">
+      <main className="flex flex-col px-4 py-6 sm:px-12 sm:py-10">
         <div className="flex items-center justify-between">
           <Link to="/" className="lg:hidden">
             <LogoLockup tone="navy" />
           </Link>
           <div className="ms-auto">
-            <LanguageToggle />
+            <LanguageToggle className="h-10" />
           </div>
         </div>
 
-        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
+        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-6">
           <h1 className="text-2xl font-semibold text-navy">{t("auth.title")}</h1>
           <p className="mt-2 text-sm text-muted-foreground">{t("auth.subtitle")}</p>
 
@@ -144,6 +144,7 @@ function AuthPage() {
               <div className="space-y-2">
                 <Label htmlFor="fullName">{t("auth.fullName")}</Label>
                 <Input
+                  className="h-11 sm:h-9"
                   id="fullName"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -166,6 +167,7 @@ function AuthPage() {
               <div className="space-y-2">
                 <Label htmlFor="password">{t("auth.password")}</Label>
                 <Input
+                  className="h-11 sm:h-9"
                   id="password"
                   type="password"
                   autoComplete={mode === "signup" ? "new-password" : "current-password"}
@@ -203,7 +205,7 @@ function AuthPage() {
               <>
                 <button
                   type="button"
-                  className="text-teal hover:underline"
+                  className="py-2 text-teal hover:underline"
                   onClick={() => setMode("reset")}
                 >
                   {t("auth.forgot")}
@@ -212,7 +214,7 @@ function AuthPage() {
                   {t("auth.noAccount")}{" "}
                   <button
                     type="button"
-                    className="text-teal hover:underline"
+                    className="py-2 text-teal hover:underline"
                     onClick={() => setMode("signup")}
                   >
                     {t("auth.signUp")}
@@ -225,7 +227,7 @@ function AuthPage() {
                 {t("auth.haveAccount")}{" "}
                 <button
                   type="button"
-                  className="text-teal hover:underline"
+                  className="py-2 text-teal hover:underline"
                   onClick={() => setMode("signin")}
                 >
                   {t("auth.signIn")}
@@ -235,7 +237,7 @@ function AuthPage() {
             {mode === "reset" && (
               <button
                 type="button"
-                className="text-teal hover:underline"
+                className="py-2 text-teal hover:underline"
                 onClick={() => setMode("signin")}
               >
                 {t("auth.back")}

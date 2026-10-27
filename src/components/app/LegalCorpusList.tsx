@@ -29,7 +29,7 @@ export function LegalCorpusList() {
   }, []);
 
   return (
-    <div className="mx-6 mt-6 rounded-2xl border border-border bg-card p-5 shadow-soft sm:mx-10">
+    <div className="mx-4 mt-6 rounded-2xl border border-border bg-card p-4 shadow-soft sm:mx-10 sm:p-5">
       <p className="flex items-center gap-2 text-sm font-semibold text-navy">
         <BookCheck className="size-4 text-teal" /> {ar ? "الأنظمة المعتمدة في المنصة" : "Verified laws the assistant cites"}
       </p>
@@ -44,7 +44,7 @@ export function LegalCorpusList() {
         <ul className="mt-3 divide-y divide-border text-sm">
           {rows.map((r) => (
             <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
-              <span className="font-medium">{r.title}</span>
+              <span className="min-w-0 break-words font-medium">{r.title}</span>
               <span className="flex items-center gap-3 text-xs text-muted-foreground">
                 <span>{r.count} {ar ? "مادة" : "articles"}</span>
                 <span>{r.status}</span>

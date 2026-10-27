@@ -121,8 +121,8 @@ function DocumentsPage() {
   };
 
   return (
-    <div className="p-6 sm:p-10">
-      <div className="flex items-center gap-3">
+    <div className="p-4 sm:p-10">
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold text-navy">{ar ? "المستندات" : "Documents"}</h1>
         <input ref={fileRef} type="file" hidden accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
@@ -136,40 +136,40 @@ function DocumentsPage() {
       {docs.length === 0 ? (
         <div className="relative mt-6 overflow-hidden rounded-2xl border border-border bg-navy-tint">
           <HexPattern className="text-navy" opacity={0.06} />
-          <div className="relative max-w-md px-8 py-16">
+          <div className="relative max-w-md px-6 py-12 sm:px-8 sm:py-16">
             <FileText className="size-6 text-teal" />
             <p className="mt-4 text-muted-foreground">{ar ? "ارفع عقداً أو حكماً أو مذكرة ليحللها ميثاق." : "Upload a contract, judgment or memo and let Mithaq analyse it."}</p>
           </div>
         </div>
       ) : (
-        <div className="mt-6 grid gap-6 lg:grid-cols-[320px_1fr]">
-          <div className="space-y-2">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <div className="min-w-0 space-y-2">
             {docs.map((d) => (
-              <div key={d.id} className={cn("group flex items-center gap-2 rounded-xl border p-3 text-sm", sel?.id === d.id ? "border-teal bg-teal/5" : "border-border bg-card")}>
+              <div key={d.id} className={cn("group flex items-center gap-1 rounded-xl border py-1 ps-3 pe-1 text-sm", sel?.id === d.id ? "border-teal bg-teal/5" : "border-border bg-card")}>
                 <FileText className="size-4 shrink-0 text-teal" />
-                <button className="flex-1 truncate text-start" onClick={() => setSel(d)}>{d.name}</button>
-                <button onClick={() => download(d)} aria-label="Download"><Download className="size-4 text-muted-foreground" /></button>
-                <button onClick={() => remove(d)} aria-label="Delete"><Trash2 className="size-4 text-muted-foreground hover:text-destructive" /></button>
+                <button className="min-w-0 flex-1 truncate py-2 ps-1 text-start" onClick={() => setSel(d)}>{d.name}</button>
+                <button className="p-2.5" onClick={() => download(d)} aria-label="Download"><Download className="size-4 text-muted-foreground" /></button>
+                <button className="p-2.5" onClick={() => remove(d)} aria-label="Delete"><Trash2 className="size-4 text-muted-foreground hover:text-destructive" /></button>
               </div>
             ))}
           </div>
-          <div className="rounded-2xl border border-border bg-card p-6">
+          <div className="min-w-0 rounded-2xl border border-border bg-card p-4 sm:p-6">
             {!sel ? (
               <p className="text-muted-foreground">{ar ? "اختر مستنداً" : "Select a document"}</p>
             ) : (
               <>
-                <h2 className="font-semibold text-navy">{sel.name}</h2>
+                <h2 className="break-words font-semibold text-navy">{sel.name}</h2>
                 <p className="text-xs text-muted-foreground">
                   {sel.extracted_text ? `${sel.extracted_text.length.toLocaleString()} ${ar ? "حرف مستخرج" : "characters extracted"}` : ar ? "لا يوجد نص" : "No text extracted"}
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {ANALYSES.map((a) => (
-                    <Button key={a.id} variant="outline" size="sm" disabled={analyzing} onClick={() => analyze(a)}>
+                    <Button key={a.id} variant="outline" size="sm" className="h-10 sm:h-8" disabled={analyzing} onClick={() => analyze(a)}>
                       <Sparkles className="size-3.5 text-teal" /> {ar ? a.ar : a.en}
                     </Button>
                   ))}
                 </div>
-                <div className="mt-6 whitespace-pre-wrap text-sm leading-relaxed">
+                <div className="mt-6 whitespace-pre-wrap break-words text-sm leading-relaxed">
                   {sel.analysis || (analyzing ? <Loader2 className="size-4 animate-spin text-teal" /> : <span className="text-muted-foreground">{ar ? "اختر نوع التحليل." : "Choose an analysis to run."}</span>)}
                 </div>
                 <p className="mt-6 text-[11px] text-muted-foreground">{ar ? "ليس بديلاً عن محامٍ مرخّص." : "Not a substitute for a licensed lawyer."}</p>
