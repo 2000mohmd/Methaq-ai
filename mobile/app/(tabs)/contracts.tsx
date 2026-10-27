@@ -7,7 +7,8 @@ import { postJSON } from "../../lib/api";
 import { shareDocx } from "../../lib/docx-export";
 import { loadLetterhead } from "../../lib/letterhead";
 import { supabase } from "../../lib/supabase";
-import { C, s } from "../../lib/theme";
+import { C, F, R, s } from "../../lib/theme";
+import { Banner, Button, Choice, FieldLabel, IconBtn, IconTile, type IconName, Pill, ScreenHeader, SectionTitle, success, tap } from "../../components/ui-kit";
 
 type Field = { key: string; en: string; ar: string; long?: boolean; options?: { v: string; en: string; ar: string }[] };
 type Step = { en: string; ar: string; fields: Field[] };
@@ -107,40 +108,42 @@ type Saved = {
   id: string; title: string; contract_type: string; inputs: Record<string, string>; language?: OutLang; created_at: string;
   status: Status; approved_body: string | null; review_note: string | null;
 };
-const STATUS: Record<Status, { ar: string; color: string }> = {
-  pending_review: { ar: "قيد المراجعة", color: C.amber },
-  approved: { ar: "معتمد", color: C.teal },
-  rejected: { ar: "مرفوض", color: C.danger },
+const STATUS: Record<Status, { ar: string; color: string; icon: IconName }> = {
+  pending_review: { ar: "قيد المراجعة", color: C.amber, icon: "time-outline" },
+  approved: { ar: "معتمد", color: C.teal, icon: "checkmark-circle" },
+  rejected: { ar: "مرفوض", color: C.danger, icon: "close-circle" },
 };
 
 function Badge({ status }: { status: Status }) {
   const b = STATUS[status] ?? STATUS.pending_review;
+  return <Pill label={b.ar} color={b.color} icon={b.icon} />;
+}
+
+/** Numbered step tracker: completed steps get a check, connected by a progress rail. Steps stay tappable. */
+function Stepper({ labels, step, onPick }: { labels: string[]; step: number; onPick: (i: number) => void }) {
   return (
-    <View style={{ borderRadius: 999, borderWidth: 1, borderColor: b.color, paddingHorizontal: 10, paddingVertical: 3 }}>
-      <Text style={{ fontSize: 12, color: b.color }}>{b.ar}</Text>
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.teal }}>الخطوة {step + 1} من {labels.length}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.navy }}>{labels[step]}</Text>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        {labels.map((l, i) => {
+          const done = i < step, active = i === step;
+          return (
+            <View key={i} style={{ flex: i ? 1 : 0, flexDirection: "row", alignItems: "center" }}>
+              {i > 0 && <View style={{ flex: 1, height: 3, borderRadius: 2, marginHorizontal: 4, backgroundColor: i <= step ? C.teal : C.border }} />}
+              <Pressable onPress={() => { tap(); onPick(i); }} hitSlop={8} accessibilityRole="button" accessibilityLabel={l}
+                style={{ width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center",
+                  backgroundColor: active ? C.navy : done ? C.teal : C.bg, borderWidth: active || done ? 0 : 1.5, borderColor: C.border }}>
+                {done ? <Ionicons name="checkmark" size={16} color="#fff" />
+                  : <Text style={{ fontFamily: F.bold, fontSize: 13, color: active ? "#fff" : C.muted }}>{i + 1}</Text>}
+              </Pressable>
+            </View>
+          );
+        })}
+      </View>
     </View>
-  );
-}
-
-function Chip({ label, active, done, onPress }: { label: string; active: boolean; done?: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{ flexDirection: "row", alignItems: "center", gap: 4, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8,
-        backgroundColor: active ? C.navy : done ? C.tealTint : C.navyTint }}
-    >
-      {done && !active && <Ionicons name="checkmark" size={12} color={C.teal} />}
-      <Text style={{ fontSize: 13, color: active ? "#fff" : done ? C.teal : C.muted }}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function Action({ icon, label, onPress, disabled }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; disabled?: boolean }) {
-  return (
-    <Pressable onPress={onPress} disabled={disabled} style={{ flexDirection: "row", alignItems: "center", gap: 6, padding: 10, opacity: disabled ? 0.4 : 1 }}>
-      <Ionicons name={icon} size={18} color={C.navy} />
-      <Text style={{ color: C.navy, fontSize: 14 }}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -190,6 +193,7 @@ ${details}`;
     try {
       // Server generates and stores the draft as pending lawyer review; only the id comes back.
       await postJSON<{ id: string; status: Status }>("/api/contracts", { title, contract_type: tpl.id, language: outLang, inputs: values, prompt });
+      success();
       Alert.alert("تم الإرسال", "تم إرسال العقد إلى المحامي للمراجعة. ستتمكن من عرضه وتنزيله بعد اعتماده.");
       load();
     } catch (e) { Alert.alert("خطأ", (e as Error).message); }
@@ -227,125 +231,144 @@ ${details}`;
   return (
     <ScrollView ref={scroll} style={s.screen} contentContainerStyle={{ padding: 16, gap: 16 }} keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={C.teal} colors={[C.teal]} />}>
-      <View style={{ gap: 4 }}>
-        <Text style={{ fontSize: 12, fontWeight: "600", color: C.teal, textAlign: "left" }}>المملكة العربية السعودية</Text>
-        <Text style={s.h1}>منشئ العقود السعودي</Text>
-        <Text style={s.muted}>صياغة عقود متوافقة مع الأنظمة السعودية خطوة بخطوة.</Text>
+      <ScreenHeader kicker="المملكة العربية السعودية" title="منشئ العقود السعودي" subtitle="صياغة عقود متوافقة مع الأنظمة السعودية خطوة بخطوة." />
+
+      <SectionTitle title="اختر نوع العقد" />
+      <View style={{ gap: 12 }}>
+        {TEMPLATES.map((t) => {
+          const on = tpl.id === t.id;
+          return (
+            <Pressable key={t.id} onPress={() => { tap(); pick(t); }} accessibilityRole="radio" accessibilityState={{ selected: on }}
+              style={({ pressed }) => [s.card, { flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1.5, borderColor: on ? C.teal : "transparent" },
+                on && { backgroundColor: C.tealTint }, pressed && { opacity: 0.9 }]}>
+              <IconTile icon={t.icon} size={52} color={on ? "#fff" : C.teal} bg={on ? C.teal : undefined} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.navy, textAlign: "left" }}>{t.ar}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                  <Ionicons name="scale-outline" size={13} color={C.muted} />
+                  <Text style={[s.muted, { flex: 1 }]} numberOfLines={2}>{t.lawAr}</Text>
+                </View>
+              </View>
+              <Ionicons name={on ? "radio-button-on" : "radio-button-off"} size={22} color={on ? C.teal : C.border} />
+            </Pressable>
+          );
+        })}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-        {TEMPLATES.map((t) => (
-          <Pressable key={t.id} onPress={() => pick(t)}
-            style={[s.card, { width: 200, gap: 6 }, tpl.id === t.id && { borderColor: C.teal, backgroundColor: C.tealTint }]}>
-            <Ionicons name={t.icon} size={20} color={C.teal} />
-            <Text style={{ fontSize: 14, fontWeight: "600", color: C.navy, textAlign: "left" }}>{t.ar}</Text>
-            <Text style={s.muted}>{t.lawAr}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      <View style={[s.card, { gap: 14 }]}>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          {[...tpl.steps, { ar: "الإنشاء" }].map((st, i) => (
-            <Chip key={i} label={st.ar} active={i === step} done={i < step} onPress={() => setStep(i)} />
-          ))}
-        </View>
+      <View style={[s.card, { gap: 18, padding: 18 }]}>
+        <Stepper labels={[...tpl.steps.map((st) => st.ar), "الإنشاء"]} step={step} onPick={setStep} />
+        <View style={{ height: 1, backgroundColor: C.border }} />
 
         {!last ? (
           <>
             {tpl.steps[step]!.fields.map((f) => (
-              <View key={f.key} style={{ gap: 6 }}>
-                <Text style={s.text}>{f.ar}</Text>
+              <View key={f.key} style={{ gap: 8 }}>
+                <FieldLabel>{f.ar}</FieldLabel>
                 {f.options ? (
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                     {f.options.map((o) => (
-                      <Chip key={o.v} label={o.ar} active={values[f.key] === o.v} onPress={() => set(f.key, values[f.key] === o.v ? "" : o.v)} />
+                      <Choice key={o.v} label={o.ar} active={values[f.key] === o.v} onPress={() => set(f.key, values[f.key] === o.v ? "" : o.v)} />
                     ))}
                   </View>
                 ) : (
-                  <TextInput style={[s.input, f.long && { minHeight: 100, textAlignVertical: "top" }]} multiline={f.long}
-                    value={values[f.key] ?? ""} onChangeText={(v) => set(f.key, v)} />
+                  <TextInput style={[s.input, { backgroundColor: C.surface, minHeight: 48 }, f.long && { minHeight: 110, textAlignVertical: "top" }]} multiline={f.long}
+                    placeholderTextColor={C.muted} value={values[f.key] ?? ""} onChangeText={(v) => set(f.key, v)} />
                 )}
               </View>
             ))}
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Action icon="chevron-forward" label="السابق" disabled={step === 0} onPress={() => setStep(step - 1)} />
-              <Pressable style={[s.btn, { paddingHorizontal: 24 }]} onPress={() => setStep(step + 1)}>
-                <Text style={s.btnText}>التالي</Text>
-              </Pressable>
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <Button icon="chevron-forward" label="السابق" variant="outline" disabled={step === 0} onPress={() => setStep(step - 1)} style={{ flex: 1 }} />
+              <Button label="التالي" icon="chevron-back" onPress={() => setStep(step + 1)} style={{ flex: 2 }} />
             </View>
           </>
         ) : (
           <>
-            <Text style={s.text}>لغة العقد</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {LANGS.map((o) => <Chip key={o.v} label={o.ar} active={outLang === o.v} onPress={() => setOutLang(o.v)} />)}
+            <View style={{ gap: 8 }}>
+              <FieldLabel>لغة العقد</FieldLabel>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {LANGS.map((o) => <Choice key={o.v} label={o.ar} active={outLang === o.v} onPress={() => setOutLang(o.v)} />)}
+              </View>
             </View>
-            <Text style={s.muted}>الحقول الفارغة ستظهر كفراغات [ ____ ] لتعبئتها لاحقاً.</Text>
-            <Pressable style={[s.btn, { flexDirection: "row", justifyContent: "center", gap: 8 }, busy && { opacity: 0.6 }]} disabled={busy} onPress={generate}>
-              {busy ? <ActivityIndicator color="#fff" /> : <Ionicons name="sparkles" size={18} color="#fff" />}
-              <Text style={s.btnText}>إنشاء العقد</Text>
-            </Pressable>
-            <Action icon="chevron-forward" label="السابق" onPress={() => setStep(step - 1)} />
+            <Banner icon="information-circle-outline" color={C.navySoft} text="الحقول الفارغة ستظهر كفراغات [ ____ ] لتعبئتها لاحقاً." />
+            <Button icon="sparkles" label="إنشاء العقد وإرساله للمراجعة" variant="teal" loading={busy} onPress={generate} />
+            <Button icon="chevron-forward" label="السابق" variant="ghost" onPress={() => setStep(step - 1)} />
           </>
         )}
       </View>
 
-      <View style={[s.card, { gap: 8, minHeight: 160 }]}>
+      <View style={[s.card, { gap: 12, padding: 18 }]}>
         {busy ? (
-          <View style={{ alignItems: "center", gap: 10, paddingVertical: 24 }}>
-            <ActivityIndicator color={C.teal} />
-            <Text style={s.muted}>جارٍ إنشاء العقد وإرساله للمحامي للمراجعة…</Text>
+          <View style={{ alignItems: "center", gap: 12, paddingVertical: 24 }}>
+            <ActivityIndicator size="large" color={C.teal} />
+            <Text style={[s.muted, { textAlign: "center" }]}>جارٍ إنشاء العقد وإرساله للمحامي للمراجعة…</Text>
           </View>
         ) : !cur ? (
-          <Text style={s.muted}>بعد الإنشاء يُرسل العقد إلى محامٍ لمراجعته، ويمكنك فتحه من قائمة العقود أدناه بعد اعتماده.</Text>
+          <View style={{ flexDirection: "row", gap: 12, alignItems: "center" }}>
+            <IconTile icon="document-text-outline" color={C.navySoft} />
+            <Text style={[s.muted, { flex: 1 }]}>بعد الإنشاء يُرسل العقد إلى محامٍ لمراجعته، ويمكنك فتحه من قائمة العقود أدناه بعد اعتماده.</Text>
+          </View>
         ) : (
           <>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ flex: 1, fontSize: 15, fontWeight: "600", color: C.navy, textAlign: "left" }}>{cur.title}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 16, color: C.navy, textAlign: "left" }}>{cur.title}</Text>
               <Badge status={cur.status} />
             </View>
             {approved ? (
               <>
-                <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-                  <Action icon="share-outline" label="مشاركة النص" onPress={() => Share.share({ message: approved })} />
-                  <Action icon="download-outline" label="Word (.docx)" onPress={exportWord} />
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                  <Button icon="share-outline" label="مشاركة النص" variant="outline" compact onPress={() => Share.share({ message: approved })} style={{ flex: 1 }} />
+                  <Button icon="download-outline" label="Word (.docx)" compact onPress={exportWord} style={{ flex: 1 }} />
                 </View>
                 {/* ponytail: raw markdown text; add a markdown renderer if users ask for formatted preview */}
-                <Text selectable style={[s.text, { lineHeight: 26, writingDirection: cur.language === "en" ? "ltr" : "rtl" }]}>{approved}</Text>
+                <View style={{ backgroundColor: C.surface, borderRadius: R.md, padding: 14 }}>
+                  <Text selectable style={[s.text, { lineHeight: 26, writingDirection: cur.language === "en" ? "ltr" : "rtl" }]}>{approved}</Text>
+                </View>
               </>
             ) : cur.status === "rejected" ? (
               <>
-                <Text style={s.text}>رفض المحامي هذا العقد.</Text>
-                {cur.review_note ? <Text style={[s.text, { color: C.danger }]}>ملاحظة المحامي: {cur.review_note}</Text> : null}
-                <Text style={s.muted}>يمكنك تعديل البيانات أعلاه وإنشاء العقد مرة أخرى.</Text>
+                <Banner icon="close-circle-outline" color={C.danger} title="رفض المحامي هذا العقد."
+                  text={cur.review_note ? `ملاحظة المحامي: ${cur.review_note}` : "يمكنك تعديل البيانات أعلاه وإنشاء العقد مرة أخرى."} />
+                {cur.review_note ? <Text style={s.muted}>يمكنك تعديل البيانات أعلاه وإنشاء العقد مرة أخرى.</Text> : null}
               </>
             ) : (
-              <Text style={s.muted}>العقد قيد مراجعة المحامي. ستتمكن من عرضه وتنزيله بعد اعتماده. اسحب الشاشة للأسفل لتحديث الحالة.</Text>
+              <Banner icon="hourglass-outline" color={C.amber} title="بانتظار مراجعة المحامي"
+                text="العقد قيد مراجعة المحامي. ستتمكن من عرضه وتنزيله بعد اعتماده. اسحب الشاشة للأسفل لتحديث الحالة." />
             )}
           </>
         )}
-        <Text style={[s.muted, { fontStyle: "italic", marginTop: 12 }]}>ميثاق ليس بديلاً عن محامٍ مرخّص. راجع العقد قبل التوقيع.</Text>
+        <Text style={[s.muted, { fontSize: 12 }]}>ميثاق ليس بديلاً عن محامٍ مرخّص. راجع العقد قبل التوقيع.</Text>
       </View>
 
-      <Text style={[s.h1, { fontSize: 18 }]}>العقود المحفوظة</Text>
+      <SectionTitle title="عقودي" right={saved.length ? <Pill label={String(saved.length)} color={C.navySoft} icon="documents-outline" /> : undefined} />
+      <Banner icon="shield-checkmark-outline" title="مراجعة محامٍ مرخّص لكل عقد"
+        text="يراجع محامٍ مرخّص كل عقد قبل إتاحته. لا يمكنك عرض العقد أو تنزيله إلا بعد اعتماده." />
       {saved.length === 0 ? (
-        <Text style={s.muted}>لا توجد عقود محفوظة بعد.</Text>
+        <View style={[s.card, { alignItems: "center", gap: 10, paddingVertical: 28 }]}>
+          <IconTile icon="folder-open-outline" size={56} />
+          <Text style={s.muted}>لا توجد عقود محفوظة بعد.</Text>
+        </View>
       ) : (
-        <View style={[s.card, { padding: 0 }]}>
-          {saved.map((sv, i) => (
-            <View key={sv.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, paddingVertical: 10,
-              borderTopWidth: i ? 1 : 0, borderColor: C.border }}>
-              <Pressable style={{ flex: 1 }} onPress={() => open(sv)}>
-                <Text style={{ fontSize: 14, fontWeight: "500", color: C.navy, textAlign: "left" }}>{sv.title}</Text>
-                <Text style={s.muted}>{new Date(sv.created_at).toLocaleDateString("ar-SA")}</Text>
-              </Pressable>
-              <Badge status={sv.status} />
-              <Pressable accessibilityLabel="حذف" hitSlop={8} onPress={() => remove(sv.id)} style={{ padding: 6 }}>
-                <Ionicons name="trash-outline" size={18} color={C.muted} />
-              </Pressable>
-            </View>
-          ))}
+        <View style={{ gap: 10 }}>
+          {saved.map((sv) => {
+            const st = STATUS[sv.status] ?? STATUS.pending_review;
+            const t = TEMPLATES.find((x) => x.id === sv.contract_type);
+            return (
+              <View key={sv.id} style={[s.card, { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingEnd: 8 },
+                cur?.id === sv.id && { borderWidth: 1.5, borderColor: C.teal }]}>
+                <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12 }} onPress={() => { tap(); open(sv); }}>
+                  <IconTile icon={t?.icon ?? "document-text-outline"} color={st.color} size={44} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Text style={{ fontFamily: F.semibold, fontSize: 15, color: C.navy, textAlign: "left" }} numberOfLines={1}>{sv.title}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Badge status={sv.status} />
+                      <Text style={[s.muted, { fontSize: 12 }]}>{new Date(sv.created_at).toLocaleDateString("ar-SA")}</Text>
+                    </View>
+                  </View>
+                </Pressable>
+                <IconBtn icon="trash-outline" label="حذف" onPress={() => remove(sv.id)} />
+              </View>
+            );
+          })}
         </View>
       )}
     </ScrollView>

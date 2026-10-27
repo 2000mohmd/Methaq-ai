@@ -1,18 +1,20 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
-import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useRef, useState } from "react";
+import { Alert, Pressable, ScrollView, Text, TextInput, type TextInputInstance, View } from "react-native";
+
+import { Banner, Button, EmptyState, IconTile, type IconName, Pill, ScreenHeader, success, tap } from "../../components/ui-kit";
 
 import { postJSON } from "../../lib/api";
 import { applyRedlines, RISK_LABEL, reportMarkdown, splitClauses, withSources, type Clause, type Finding, type Result, type Risk, type SrcInfo } from "../../lib/audit-core";
 import { shareDocx } from "../../lib/docx-export";
 import { loadLetterhead } from "../../lib/letterhead";
-import { C, s } from "../../lib/theme";
+import { C, F, R, s } from "../../lib/theme";
 
 const BATCH = 6;
 const RISK_COLOR: Record<Risk, string> = { high: C.danger, medium: C.amber, low: C.muted, ok: C.teal };
-const RISK_ICON: Record<Risk, keyof typeof Ionicons.glyphMap> = { high: "shield-outline", medium: "warning-outline", low: "warning-outline", ok: "checkmark-circle-outline" };
+const RISK_ICON: Record<Risk, IconName> = { high: "alert-circle-outline", medium: "warning-outline", low: "information-circle-outline", ok: "checkmark-circle-outline" };
 const PDF_MSG = "قراءة ملفات PDF غير متاحة في التطبيق بعد. انسخ نص العقد والصقه هنا، أو استخدم الموقع لرفع ملف PDF.";
 
 /** Read a picked file as plain text; null = unsupported format (message already shown). */
@@ -43,6 +45,7 @@ export default function AuditScreen() {
   const [accepted, setAccepted] = useState<Set<number>>(new Set());
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
+  const input = useRef<TextInputInstance>(null);
 
   async function pick() {
     const r = await DocumentPicker.getDocumentAsync({
@@ -73,6 +76,7 @@ export default function AuditScreen() {
         setResults([...all]);
         setProgress(Math.min(100, Math.round(((i + BATCH) / cl.length) * 100)));
       }
+      success();
     } catch (e) {
       Alert.alert("فشل التدقيق", (e as Error).message);
     }
@@ -100,100 +104,130 @@ export default function AuditScreen() {
   const count = (r: Risk) => results.filter((x) => x.risk === r).length;
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ padding: 16, gap: 12 }} keyboardShouldPersistTaps="handled">
-      <Text style={[s.muted, { color: C.teal, fontWeight: "600" }]}>المملكة العربية السعودية</Text>
-      <Text style={s.h1}>مدقق العقود والامتثال السعودي</Text>
-      <Text style={s.muted}>الصق نص العقد أو اختر ملفاً (Word أو نص) للحصول على تدقيق بند ببند مع المخاطر النظامية والصياغات المقترحة.</Text>
+    <ScrollView style={s.screen} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+      <ScreenHeader kicker="المملكة العربية السعودية" title="مدقق العقود والامتثال"
+        subtitle="تدقيق بند ببند مع المخاطر النظامية والصياغات المقترحة." />
 
-      <TextInput
-        style={[s.input, { minHeight: 140, textAlignVertical: "top" }]}
-        multiline
-        placeholder="الصق نص العقد هنا…"
-        placeholderTextColor={C.muted}
-        value={text}
-        onChangeText={setText}
-        editable={!busy}
-      />
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <Btn icon="attach-outline" label="اختيار ملف" outline onPress={pick} disabled={busy} />
-        <Btn icon="search-outline" label="تدقيق العقد" onPress={run} disabled={busy || !text.trim()} />
+      <View style={[s.card, { gap: 14, padding: 18 }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <IconTile icon="shield-checkmark-outline" size={48} />
+          <View style={{ flex: 1 }}>
+            <Text style={[s.h2, { fontSize: 16 }]}>أضف العقد للتدقيق</Text>
+            <Text style={[s.muted, { fontSize: 12 }]}>Word أو ملف نصي، أو الصق النص مباشرة</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Source icon="cloud-upload-outline" label="رفع ملف" onPress={pick} disabled={busy} />
+          <Source icon="clipboard-outline" label="لصق النص" onPress={() => input.current?.focus()} disabled={busy} />
+        </View>
+        <TextInput
+          ref={input}
+          style={[s.input, { minHeight: 150, textAlignVertical: "top", backgroundColor: C.surface }]}
+          multiline
+          placeholder="الصق نص العقد هنا…"
+          placeholderTextColor={C.muted}
+          value={text}
+          onChangeText={setText}
+          editable={!busy}
+        />
+        {text.trim() ? <Text style={[s.muted, { fontSize: 12 }]}>{name} · {text.trim().length.toLocaleString("ar-SA")} حرف</Text> : null}
+        <Button icon="search-outline" label="تدقيق العقد" variant="teal" onPress={run} disabled={!text.trim()} loading={busy} />
+        {busy && (
+          <View style={{ gap: 6 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={[s.muted, { fontFamily: F.medium }]}>جارٍ التدقيق…</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: 13, color: C.teal }}>{progress}%</Text>
+            </View>
+            <View style={{ height: 8, borderRadius: 4, backgroundColor: C.navyTint, overflow: "hidden" }}>
+              <View style={{ width: `${Math.max(progress, 4)}%`, height: "100%", borderRadius: 4, backgroundColor: C.teal }} />
+            </View>
+          </View>
+        )}
       </View>
-      {busy && (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-          <ActivityIndicator color={C.teal} />
-          <Text style={s.muted}>جارٍ التدقيق… {progress}%</Text>
-        </View>
-      )}
-
-      {results.length > 0 && !busy && (
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Btn icon="download-outline" label="تقرير التدقيق" outline onPress={() => exportDoc("report")} />
-          <Btn icon="download-outline" label={`العقد المعدّل (${accepted.size})`} outline onPress={() => exportDoc("revised")} disabled={accepted.size === 0} />
-        </View>
-      )}
 
       {results.length > 0 && (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           {(["high", "medium", "low", "ok"] as Risk[]).map((r) => (
-            <View key={r} style={[s.card, { flexGrow: 1, flexBasis: "45%", borderColor: RISK_COLOR[r], backgroundColor: RISK_COLOR[r] + "10" }]}>
-              <Text style={s.muted}>{RISK_LABEL[r]}</Text>
-              <Text style={[s.h1, { marginTop: 4 }]}>{count(r)}</Text>
+            <View key={r} style={[s.card, { flexGrow: 1, flexBasis: "45%", gap: 10, padding: 14 }]}>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <IconTile icon={RISK_ICON[r]} color={RISK_COLOR[r]} size={36} />
+                <Text style={{ fontFamily: F.bold, fontSize: 28, color: RISK_COLOR[r], lineHeight: 36 }}>{count(r)}</Text>
+              </View>
+              <Text style={[s.muted, { fontFamily: F.medium, color: C.fg }]}>{RISK_LABEL[r]}</Text>
             </View>
           ))}
         </View>
       )}
 
-      {results.map((r) => (
-        <View key={r.n} style={[s.card, { gap: 8, borderColor: RISK_COLOR[r.risk], backgroundColor: RISK_COLOR[r.risk] + "0d" }]}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={[s.text, { fontWeight: "700", color: C.navy }]}>البند {r.n}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Ionicons name={RISK_ICON[r.risk]} size={16} color={RISK_COLOR[r.risk]} />
-              <Text style={[s.muted, { color: RISK_COLOR[r.risk], fontWeight: "600" }]}>{RISK_LABEL[r.risk]}</Text>
-            </View>
-          </View>
-          <Text style={s.muted}>{clauses.find((c) => c.n === r.n)?.text}</Text>
-          {!!r.issue && <Text style={s.text}>{r.issue}</Text>}
-          {r.sources.length > 0 ? (
-            <Text style={[s.muted, { color: C.teal }]}>
-              السند: {r.sources.map((x) => `${x.title}${x.ref ? ` — م ${x.ref}` : ""}${x.status === "repealed" ? " (ملغى)" : ""}`).join("; ")}
-            </Text>
-          ) : (
-            (r.risk === "high" || r.risk === "medium") && (
-              <Text style={[s.muted, { color: C.amber }]}>⚠ لا يوجد مصدر موثّق في المكتبة — تحقق يدوياً قبل الاعتماد.</Text>
-            )
-          )}
-          {!!r.redline && (
-            <View style={[s.card, { padding: 12, gap: 6 }]}>
-              <Text style={[s.muted, { color: C.navy, fontWeight: "700" }]}>الصياغة المقترحة</Text>
-              <Text style={s.text}>{r.redline}</Text>
-              <Btn icon="checkmark" label={accepted.has(r.n) ? "تم القبول — اضغط للتراجع" : "قبول التعديل"} outline={!accepted.has(r.n)} onPress={() => toggle(r.n)} />
-            </View>
-          )}
-        </View>
-      ))}
-
-      {results.length === 0 && !busy && (
-        <View style={{ alignItems: "center", gap: 6, paddingVertical: 24 }}>
-          <Ionicons name="document-text-outline" size={40} color={C.teal} />
-          <Text style={s.muted}>لم يُدقَّق أي عقد بعد.</Text>
+      {results.length > 0 && !busy && (
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Button icon="document-text-outline" label="تقرير التدقيق" variant="outline" compact onPress={() => exportDoc("report")} style={{ flex: 1 }} />
+          <Button icon="download-outline" label={`العقد المعدّل (${accepted.size})`} compact onPress={() => exportDoc("revised")} disabled={accepted.size === 0} style={{ flex: 1 }} />
         </View>
       )}
-      <Text style={[s.muted, { fontStyle: "italic", marginTop: 8 }]}>هذا تدقيق آلي للمساعدة فقط ويجب أن يراجعه محامٍ مرخّص قبل الاعتماد.</Text>
+
+      {results.map((r) => {
+        const color = RISK_COLOR[r.risk];
+        const on = accepted.has(r.n);
+        return (
+          <View key={r.n} style={[s.card, { gap: 10, borderStartWidth: 4, borderStartColor: color }]}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.navy }}>البند {r.n}</Text>
+              <Pill label={RISK_LABEL[r.risk]} color={color} icon={RISK_ICON[r.risk]} />
+            </View>
+            <Text style={[s.muted, { backgroundColor: C.surface, borderRadius: R.sm, padding: 10 }]}>{clauses.find((c) => c.n === r.n)?.text}</Text>
+            {!!r.issue && <Text style={s.text}>{r.issue}</Text>}
+            {r.sources.length > 0 ? (
+              <View style={{ flexDirection: "row", gap: 6, alignItems: "flex-start" }}>
+                <Ionicons name="book-outline" size={14} color={C.teal} style={{ marginTop: 3 }} />
+                <Text style={[s.muted, { color: C.teal, flex: 1 }]}>
+                  السند: {r.sources.map((x) => `${x.title}${x.ref ? ` — م ${x.ref}` : ""}${x.status === "repealed" ? " (ملغى)" : ""}`).join("; ")}
+                </Text>
+              </View>
+            ) : (
+              (r.risk === "high" || r.risk === "medium") && (
+                <View style={{ flexDirection: "row", gap: 6, alignItems: "flex-start" }}>
+                  <Ionicons name="alert-circle-outline" size={14} color={C.amber} style={{ marginTop: 3 }} />
+                  <Text style={[s.muted, { color: C.amber, flex: 1 }]}>لا يوجد مصدر موثّق في المكتبة — تحقق يدوياً قبل الاعتماد.</Text>
+                </View>
+              )
+            )}
+            {!!r.redline && (
+              <View style={{ gap: 10, padding: 12, borderRadius: R.md, backgroundColor: on ? C.tealTint : C.navyTint }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <Ionicons name="create-outline" size={15} color={C.navy} />
+                  <Text style={{ fontFamily: F.semibold, fontSize: 13, color: C.navy }}>الصياغة المقترحة</Text>
+                </View>
+                <Text style={s.text}>{r.redline}</Text>
+                {on ? (
+                  <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
+                    <View style={{ flex: 1 }}><Pill label="تم قبول التعديل" color={C.teal} icon="checkmark-circle" /></View>
+                    <Button icon="arrow-undo-outline" label="تراجع" variant="outline" compact onPress={() => toggle(r.n)} />
+                  </View>
+                ) : (
+                  <Button icon="checkmark" label="قبول التعديل" variant="teal" compact onPress={() => toggle(r.n)} />
+                )}
+              </View>
+            )}
+          </View>
+        );
+      })}
+
+      {results.length === 0 && !busy && (
+        <EmptyState icon="document-text-outline" title="لم يُدقَّق أي عقد بعد." text="ارفع ملفاً أو الصق نص العقد ثم اضغط «تدقيق العقد»." />
+      )}
+      <Banner icon="information-circle-outline" color={C.navySoft} text="هذا تدقيق آلي للمساعدة فقط ويجب أن يراجعه محامٍ مرخّص قبل الاعتماد." />
     </ScrollView>
   );
 }
 
-function Btn(p: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; disabled?: boolean; outline?: boolean }) {
-  const fg = p.outline ? C.navy : "#fff";
+function Source(p: { icon: IconName; label: string; onPress: () => void; disabled?: boolean }) {
   return (
-    <Pressable
-      onPress={p.onPress}
-      disabled={p.disabled}
-      style={[s.btn, { flex: 1, flexDirection: "row", justifyContent: "center", gap: 6, opacity: p.disabled ? 0.5 : 1 }, p.outline && { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border }]}
-    >
-      <Ionicons name={p.icon} size={18} color={fg} />
-      <Text style={[s.btnText, { color: fg, fontSize: 15 }]}>{p.label}</Text>
+    <Pressable onPress={() => { tap(); p.onPress(); }} disabled={p.disabled} accessibilityRole="button"
+      style={({ pressed }) => ({ flex: 1, minHeight: 72, gap: 6, alignItems: "center", justifyContent: "center", borderRadius: R.md, borderWidth: 1.5,
+        borderStyle: "dashed", borderColor: C.tealSoft, backgroundColor: pressed ? C.tealTint : C.bg, opacity: p.disabled ? 0.5 : 1 })}>
+      <Ionicons name={p.icon} size={22} color={C.teal} />
+      <Text style={{ fontFamily: F.semibold, fontSize: 14, color: C.navy }}>{p.label}</Text>
     </Pressable>
   );
 }

@@ -1,12 +1,14 @@
-import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Text, View } from "react-native";
 
 import { streamChat } from "../lib/api";
 import { supabase } from "../lib/supabase";
-import { C, s } from "../lib/theme";
+import { C, F, R, s } from "../lib/theme";
+import { Button, EmptyState, Fab, IconBtn, IconTile, type IconName, Pill, SectionTitle, success, tap } from "./ui-kit";
+
+const fileIcon = (n: string): IconName => /\.pdf$/i.test(n) ? "document-attach-outline" : /\.(png|jpe?g|heic|webp)$/i.test(n) ? "image-outline" : "document-text-outline";
 
 type Doc = {
   id: string;
@@ -19,10 +21,10 @@ type Doc = {
 };
 
 // Same prompts as the website's src/routes/app/documents.tsx.
-const ANALYSES = [
-  { id: "summary", ar: "تلخيص", prompt: "Summarise this document: parties, purpose, key obligations, dates, amounts." },
-  { id: "risks", ar: "مراجعة المخاطر", prompt: "Review this document for legal risks. List each risk with severity (High/Medium/Low), the clause quoted, and a suggested redline." },
-  { id: "clauses", ar: "البنود الرئيسية", prompt: "Extract key clauses (term, termination, liability, indemnity, governing law, dispute resolution, confidentiality, payment) in a table-like list." },
+const ANALYSES: { id: string; ar: string; icon: IconName; prompt: string }[] = [
+  { id: "summary", ar: "تلخيص", icon: "reader-outline", prompt: "Summarise this document: parties, purpose, key obligations, dates, amounts." },
+  { id: "risks", ar: "مراجعة المخاطر", icon: "warning-outline", prompt: "Review this document for legal risks. List each risk with severity (High/Medium/Low), the clause quoted, and a suggested redline." },
+  { id: "clauses", ar: "البنود الرئيسية", icon: "list-outline", prompt: "Extract key clauses (term, termination, liability, indemnity, governing law, dispute resolution, confidentiality, payment) in a table-like list." },
 ];
 
 /** Plain text from .txt/.md/.docx; "" for anything else (no PDF parsing or OCR on device). */
@@ -82,6 +84,7 @@ export function LibraryDocuments() {
         .single();
       if (error) throw error;
       await load();
+      success();
       setSel(data as Doc);
     } catch (e) {
       Alert.alert("خطأ", (e as Error).message);
@@ -130,63 +133,64 @@ export function LibraryDocuments() {
     ]);
 
   return (
-    <View style={{ gap: 12 }}>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text style={[s.h1, { flex: 1 }]}>المستندات</Text>
-        <Pressable style={[s.btn, { paddingHorizontal: 16, paddingVertical: 10, flexDirection: "row", gap: 6 }]} onPress={upload} disabled={uploading}>
-          {uploading ? <ActivityIndicator color="#fff" /> : <Ionicons name="cloud-upload-outline" size={18} color="#fff" />}
-          <Text style={s.btnText}>رفع مستند</Text>
-        </Pressable>
-      </View>
-      <Text style={s.muted}>PDF أو Word أو نص — حتى 20 ميغابايت</Text>
+    <View style={{ flex: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
+        <SectionTitle title="المستندات" right={docs.length ? <Pill label={String(docs.length)} color={C.navySoft} icon="documents-outline" /> : undefined} />
+        <Text style={[s.muted, { marginTop: -10 }]}>PDF أو Word أو نص — حتى 20 ميغابايت</Text>
 
-      {docs.length === 0 ? (
-        <View style={[s.card, { backgroundColor: C.navyTint, paddingVertical: 28, gap: 10 }]}>
-          <Ionicons name="document-text-outline" size={24} color={C.teal} />
-          <Text style={s.muted}>ارفع عقداً أو حكماً أو مذكرة ليحللها ميثاق.</Text>
-        </View>
-      ) : (
-        docs.map((d) => (
-          <View key={d.id} style={[s.card, { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 6 }, sel?.id === d.id && { borderColor: C.teal, backgroundColor: C.tealTint }]}>
-            <Ionicons name="document-text-outline" size={18} color={C.teal} />
-            <Pressable style={{ flex: 1, paddingVertical: 8 }} onPress={() => setSel(d)}>
-              <Text style={s.text} numberOfLines={1}>{d.name}</Text>
-            </Pressable>
-            <Pressable style={{ padding: 8 }} onPress={() => openDoc(d)} accessibilityLabel="فتح">
-              <Ionicons name="open-outline" size={18} color={C.muted} />
-            </Pressable>
-            <Pressable style={{ padding: 8 }} onPress={() => remove(d)} accessibilityLabel="حذف">
-              <Ionicons name="trash-outline" size={18} color={C.muted} />
-            </Pressable>
-          </View>
-        ))
-      )}
+        {docs.length === 0 ? (
+          <EmptyState icon="cloud-upload-outline" title="لا توجد مستندات بعد" text="ارفع عقداً أو حكماً أو مذكرة ليحللها ميثاق." />
+        ) : (
+          docs.map((d) => {
+            const on = sel?.id === d.id;
+            return (
+              <View key={d.id} style={[s.card, { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingEnd: 6, borderWidth: 1.5, borderColor: on ? C.teal : "transparent" }, on && { backgroundColor: C.tealTint }]}>
+                <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12 }} onPress={() => { tap(); setSel(d); }}>
+                  <IconTile icon={fileIcon(d.name)} color={on ? "#fff" : C.teal} bg={on ? C.teal : undefined} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ fontFamily: F.semibold, fontSize: 15, color: C.navy, textAlign: "left" }} numberOfLines={1}>{d.name}</Text>
+                    <Text style={[s.muted, { fontSize: 12 }]}>
+                      {new Date(d.created_at).toLocaleDateString("ar-SA")}{d.size_bytes ? ` · ${(d.size_bytes / 1024).toFixed(0)} ك.ب` : ""}{d.analysis ? " · تم التحليل" : ""}
+                    </Text>
+                  </View>
+                </Pressable>
+                <IconBtn icon="open-outline" label="فتح" onPress={() => openDoc(d)} />
+                <IconBtn icon="trash-outline" label="حذف" color={C.danger} onPress={() => remove(d)} />
+              </View>
+            );
+          })
+        )}
 
-      {sel && (
-        <View style={[s.card, { gap: 10 }]}>
-          <Text style={{ fontSize: 16, fontWeight: "600", color: C.navy, textAlign: "left" }}>{sel.name}</Text>
-          <Text style={s.muted}>
-            {sel.extracted_text ? `${sel.extracted_text.length.toLocaleString()} حرف مستخرج` : "لا يوجد نص — تحليل ملفات PDF والصور متاح على الموقع فقط"}
-          </Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            {ANALYSES.map((a) => (
-              <Pressable key={a.id} disabled={analyzing} onPress={() => analyze(a)}
-                style={{ flexDirection: "row", alignItems: "center", gap: 4, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, opacity: analyzing ? 0.5 : 1 }}>
-                <Ionicons name="sparkles-outline" size={14} color={C.teal} />
-                <Text style={{ color: C.fg }}>{a.ar}</Text>
-              </Pressable>
-            ))}
+        {sel && (
+          <View style={[s.card, { gap: 14, padding: 18 }]}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+              <IconTile icon="sparkles-outline" color="#fff" bg={C.navy} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.navy, textAlign: "left" }} numberOfLines={2}>{sel.name}</Text>
+                <Text style={[s.muted, { fontSize: 12 }]}>
+                  {sel.extracted_text ? `${sel.extracted_text.length.toLocaleString()} حرف مستخرج` : "لا يوجد نص — تحليل ملفات PDF والصور متاح على الموقع فقط"}
+                </Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {ANALYSES.map((a) => (
+                <Button key={a.id} icon={a.icon} label={a.ar} variant="outline" compact disabled={analyzing} onPress={() => analyze(a)} style={{ flexGrow: 1 }} />
+              ))}
+            </View>
+            {sel.analysis ? (
+              <View style={{ backgroundColor: C.surface, borderRadius: R.md, padding: 14 }}>
+                <Text style={s.text} selectable>{sel.analysis}</Text>
+              </View>
+            ) : analyzing ? (
+              <ActivityIndicator color={C.teal} />
+            ) : (
+              <Text style={[s.muted, { textAlign: "center" }]}>اختر نوع التحليل.</Text>
+            )}
+            <Text style={[s.muted, { fontSize: 11 }]}>ليس بديلاً عن محامٍ مرخّص.</Text>
           </View>
-          {sel.analysis ? (
-            <Text style={s.text} selectable>{sel.analysis}</Text>
-          ) : analyzing ? (
-            <ActivityIndicator color={C.teal} />
-          ) : (
-            <Text style={s.muted}>اختر نوع التحليل.</Text>
-          )}
-          <Text style={[s.muted, { fontSize: 11 }]}>ليس بديلاً عن محامٍ مرخّص.</Text>
-        </View>
-      )}
+        )}
+      </ScrollView>
+      <Fab icon="add" label="رفع مستند" onPress={upload} loading={uploading} />
     </View>
   );
 }
