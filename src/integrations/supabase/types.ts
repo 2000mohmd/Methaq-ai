@@ -124,8 +124,13 @@ export type Database = {
           approved_body: string | null
           review_note: string | null
           reviewed_at: string | null
+          kind: string
+          reviewer_name: string | null
+          reviewer_licence: string | null
+          hidden_at: string | null
         }
         Insert: {
+          kind?: string
           body?: string
           contract_type: string
           created_at?: string
@@ -662,6 +667,10 @@ export type Database = {
           onboarded: boolean
           organization_id: string | null
           updated_at: string
+          terms_version: string | null
+          privacy_version: string | null
+          consented_at: string | null
+          ai_processing_consent: boolean
         }
         Insert: {
           account_type?: Database["public"]["Enums"]["account_type"] | null
@@ -690,6 +699,10 @@ export type Database = {
           onboarded?: boolean
           organization_id?: string | null
           updated_at?: string
+          terms_version?: string | null
+          privacy_version?: string | null
+          consented_at?: string | null
+          ai_processing_consent?: boolean
         }
         Relationships: [
           {
@@ -885,12 +898,27 @@ export type Database = {
       review_queue: {
         Args: never
         Returns: {
-          id: string; created_by: string; title: string; contract_type: string; language: string; inputs: Json
+          id: string; created_by: string; kind: string; title: string; contract_type: string; language: string; inputs: Json
           body: string; status: string; approved_body: string | null; review_note: string | null
+          reviewer_name: string | null; reviewer_licence: string | null
           reviewed_at: string | null; created_at: string; author_email: string | null
         }[]
       }
       review_contract: { Args: { _id: string; _decision: string; _body: string; _note: string }; Returns: undefined }
+      hide_contract: { Args: { _id: string }; Returns: undefined }
+      self_approve_contract: { Args: { _id: string }; Returns: undefined }
+      is_verified_lawyer: { Args: { _uid?: string }; Returns: boolean }
+      lawyer_applications: {
+        Args: never
+        Returns: {
+          user_id: string; email: string | null; full_name: string; licence_no: string; licence_expiry: string | null
+          phone: string | null; city: string | null; specialties: string[]; licence_file: string | null
+          status: string; review_note: string | null; reviewed_at: string | null; created_at: string
+        }[]
+      }
+      review_lawyer: { Args: { _user: string; _decision: string; _note: string }; Returns: undefined }
+      delete_my_account: { Args: never; Returns: undefined }
+      platform_stats_lawyers: { Args: never; Returns: Json }
       claim_invitations: { Args: never; Returns: number }
       current_org_id: { Args: never; Returns: string }
       has_org_role: {
