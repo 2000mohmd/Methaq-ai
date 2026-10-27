@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Mithaq</string>
+    <string name="title_activity_main">Mithaq</string>
+    <string name="package_name">sa.mithaqalarabia.app</string>
+    <string name="custom_url_scheme">sa.mithaqalarabia.app</string>
+</resources>

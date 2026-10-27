@@ -1,0 +1,23 @@
+{
+  "name": "ميثاق العربية — Mithaq Alarabia",
+  "short_name": "Mithaq",
+  "description": "منصة ذكاء اصطناعي قانونية — Bilingual legal AI",
+  "lang": "ar",
+  "dir": "rtl",
+  "id": "/app",
+  "start_url": "/app",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#013041",
+  "background_color": "#013041",
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
