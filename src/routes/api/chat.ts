@@ -3,7 +3,8 @@ import { createClient } from "@supabase/supabase-js";
 
 import { AI_NOT_CONFIGURED, aiError, aiFetch, councilModels } from "@/lib/ai-provider";
 import { allow, TOO_MANY } from "@/lib/rate-limit";
-import { loadChunks } from "@/lib/legal/retrieve";
+import { loadChunks, loadRegistry } from "@/lib/legal/retrieve";
+import { pickRegistry, pointersBlock, registryForModel } from "@/lib/legal/registry";
 import { councilDisagreement, expandReferences, rank, verifyAnswer, type Source } from "@/lib/legal/legal";
 
 const SYSTEM = `You are Mithaq, a careful, jurisdiction-aware legal AI assistant for lawyers and individuals in the Arab world (GCC, Egypt, Jordan, Lebanon and beyond).
@@ -12,7 +13,17 @@ const SYSTEM = `You are Mithaq, a careful, jurisdiction-aware legal AI assistant
 - Cite only sources you are given, using their [S#] markers; never invent citations or article numbers. If you are unsure, say so plainly.
 - When drafting, produce complete, professional documents.
 - When reviewing contracts, list risks by severity with suggested redlines.
-- End substantive legal advice with a brief reminder that this is not a substitute for a licensed lawyer.`;
+- End substantive legal advice with a brief reminder that this is not a substitute for a licensed lawyer.
+
+Saudi Arabia grounding policy (applies when the jurisdiction is Saudi Arabia):
+1. Identify the legal domain first (civil, commercial, labour, family and personal status, investment, criminal, administrative, tax/zakat/customs, real estate, data protection, IP, banking, capital markets, insurance, bankruptcy, telecom, arbitration). If a specific regulator governs the matter, its own rules apply in addition to the general statute.
+2. Primary legislation and the Official Gazette come first. Court rulings and circulars inform interpretation only; never present a ruling as if it were the statute, and name the court and year if you mention one.
+3. Keep procedure ("how do I / what are the steps") clearly separate from the legal conclusion; procedure is not law.
+4. A draft law or consultation document is NOT in force. Say so explicitly and never use it to state current law.
+5. If sources conflict, prefer the more specific and the later-effective text, but check for transitional or grandfathering provisions before concluding.
+6. Escalate instead of guessing: for statutory deadlines, penalties, personal liability, large amounts, an unresolved conflict or a missing fact, give no definitive opinion. State what you found, name the open question, and say a lawyer must sign off.
+7. Keep defined legal terms and article numbers exact; use a formal legal register.
+8. Any draft, memo or legal conclusion you produce is a "Draft — requires lawyer review" until a lawyer approves it.`;
 
 const GROUNDED = `
 
@@ -56,6 +67,11 @@ export const Route = createFileRoute("/api/chat")({
         } catch {
           /* library is optional */
         }
+
+        // Official-source registry: pointers the app lists itself (the model only uses them to pick the right authority).
+        const lastQ = [...body.messages].reverse().find((m) => m.role === "user")?.content ?? "";
+        const picked = pickRegistry(await loadRegistry(sb).catch(() => []), lastQ);
+        const pointers = pointersBlock(picked, /[؀-ۿ]/.test(lastQ));
 
         if (body.mode === "council" && !allow(userData.user.id, "council", 4)) return new Response(TOO_MANY, { status: 429 });
         if (JSON.stringify(body.messages).length > 200_000) return new Response("Message too large", { status: 413 });
@@ -147,7 +163,7 @@ export const Route = createFileRoute("/api/chat")({
             },
             async flush(ctl) {
               const v = verifyAnswer(answer, sources);
-              ctl.enqueue(enc.encode(`data: ${JSON.stringify({ mithaq_final: v.text })}\n\n`));
+              ctl.enqueue(enc.encode(`data: ${JSON.stringify({ mithaq_final: v.text + pointers })}\n\n`));
               ctl.enqueue(enc.encode("data: [DONE]\n\n"));
               await sb.from("audit_logs").insert({
                 user_id: uid,

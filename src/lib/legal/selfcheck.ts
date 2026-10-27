@@ -56,4 +56,17 @@ assert.equal(built.report.articles, 3);
 assert.deepEqual(built.report.missing, [3]); // gap between 2 and 4 is reported
 assert.ok(built.sql.includes("$lawx$") && built.sql.includes("ON CONFLICT"), "dollar-quote tag avoids collisions");
 assert.throws(() => buildCorpusSql("x", { title: "t", url: "" }), /official source/);
+import { classifyDomains, pickRegistry, pointersBlock, type RegistryRow } from "./registry.ts";
+const reg: RegistryRow[] = [
+  { authority: "TEST-BOE", source_name: "central portal", legal_domain: "عام / جميع الأنظمة", priority_tier: "P1", url: "https://example.invalid/boe" },
+  { authority: "TEST-MOJ", source_name: "justice laws", legal_domain: "تقاضي / عدلي", priority_tier: "P1", url: "https://example.invalid/moj" },
+  { authority: "TEST-HRSD", source_name: "labour", legal_domain: "عمل", priority_tier: "P1", url: "https://example.invalid/hrsd" },
+  { authority: "TEST-NCC", source_name: "draft laws", legal_domain: "مشاريع الأنظمة واللوائح", priority_tier: "P4", url: "https://example.invalid/ncc" },
+  { authority: "TEST-COURT", source_name: "rulings", legal_domain: "عمل / قضاء", priority_tier: "P2", url: "https://example.invalid/court" },
+];
+assert.ok(classifyDomains("ما هي حقوق الحضانة بعد الطلاق؟").includes("تقاضي")); // family law routes to the justice portals
+assert.deepEqual(pickRegistry(reg, "ما مدة فترة التجربة في عقد العمل؟").map((r) => r.authority), ["TEST-HRSD", "TEST-COURT", "TEST-BOE"]); // tier order + central portal
+assert.ok(!pickRegistry(reg, "what is the probation period in an employment contract").some((r) => r.priority_tier === "P4")); // drafts only when asked
+assert.ok(pickRegistry(reg, "any proposed draft law on labour consultation").some((r) => r.priority_tier === "P4"));
+assert.ok(pointersBlock(reg.slice(3, 4), false).includes("draft, NOT in force"));
 console.log("legal selfcheck ok");

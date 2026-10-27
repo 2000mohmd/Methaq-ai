@@ -3,6 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { chunkByArticle, type Chunk } from "./legal";
+import type { RegistryRow } from "./registry";
 
 // The corpus is identical for every user, so keep it in memory for a few minutes instead of re-reading it per request.
 // ponytail: whole corpus in memory + lexical ranking; move to a DB full-text/vector index when it passes ~20k articles.
@@ -43,4 +44,16 @@ async function loadOwnLibrary(sb: SupabaseClient): Promise<Chunk[]> {
 export async function loadChunks(sb: SupabaseClient): Promise<Chunk[]> {
   const [corpus, own] = await Promise.all([loadCorpus(sb).catch(() => [] as Chunk[]), loadOwnLibrary(sb).catch(() => [] as Chunk[])]);
   return [...corpus, ...own];
+}
+
+// Registry of official sources (pointers). Same for every user, so cached like the corpus.
+let registryCache: { at: number; rows: RegistryRow[] } | null = null;
+
+export async function loadRegistry(sb: SupabaseClient): Promise<RegistryRow[]> {
+  if (registryCache && Date.now() - registryCache.at < TTL_MS) return registryCache.rows;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data } = await (sb as any).from("legal_source_registry").select("authority,source_name,legal_domain,ai_agent_use,priority_tier,url,notes");
+  const rows = ((data ?? []) as RegistryRow[]) ?? [];
+  if (rows.length) registryCache = { at: Date.now(), rows };
+  return rows;
 }
