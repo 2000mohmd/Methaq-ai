@@ -9,7 +9,10 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "sa.mithaqalarabia.app"
+      "bundleIdentifier": "sa.mithaqalarabia.app",
+      "infoPlist": {
+        "ExpoLocalization_forcesRTL": true
+      }
     },
     "android": {
       "package": "sa.mithaqalarabia.app",
@@ -47,7 +50,18 @@
     "extra": {
       "apiUrl": "http://192.168.10.81:3000",
       "supabaseUrl": "https://yjkyatmmywvfzaihfjou.supabase.co",
-      "supabaseKey": "sb_publishable_F9jJgAe-O8H6RdYgFZIc-Q_R6GxcBeX"
-    }
+      "supabaseKey": "sb_publishable_F9jJgAe-O8H6RdYgFZIc-Q_R6GxcBeX",
+      "router": {
+        "asyncRoutes": {
+          "web": true
+        }
+      },
+      "supportsRTL": true,
+      "forcesRTL": true,
+      "eas": {
+        "projectId": "86918f91-c69b-4bf9-8ca7-8523f3042672"
+      }
+    },
+    "owner": "mohmd-2"
   }
 }

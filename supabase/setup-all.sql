@@ -500,6 +500,7 @@ INSERT INTO public.legal_source_registry (seq_no, authority, source_name, legal_
 ON CONFLICT (authority, source_name) DO UPDATE SET url = EXCLUDED.url, last_verified = EXCLUDED.last_verified, notes = EXCLUDED.notes, priority_tier = EXCLUDED.priority_tier;
 
 -- ===== 20261028100000_contract_review.sql =====
+-- Admin panel roles + per-instance contract review.
 -- Review model (decided by the owner, 2026-10-27): PER-INSTANCE lawyer review.
 -- Any user may generate a contract, but the AI draft (body) is never readable by the
 -- client. A platform reviewer (our lawyer) edits and approves it; only then is
@@ -524,20 +525,27 @@ CREATE TABLE IF NOT EXISTS public.contracts (
 );
 ALTER TABLE public.contracts ENABLE ROW LEVEL SECURITY;
 
--- Platform lawyers who review contracts. Managed only from the SQL editor:
---   INSERT INTO public.platform_reviewers (user_id, name)
---   SELECT id, 'Lawyer name' FROM auth.users WHERE email = 'lawyer@example.com';
-CREATE TABLE IF NOT EXISTS public.platform_reviewers (
+-- Platform staff (our team, not customers). Managed only from the SQL editor:
+--   INSERT INTO public.platform_staff (user_id, role, name)
+--   SELECT id, 'admin', 'Owner' FROM auth.users WHERE email = 'owner@example.com';
+-- role 'admin' = analytics + contract review; role 'lawyer' = contract review only.
+CREATE TABLE IF NOT EXISTS public.platform_staff (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  role text NOT NULL CHECK (role IN ('admin', 'lawyer')),
   name text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
-ALTER TABLE public.platform_reviewers ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.platform_reviewers FROM anon, authenticated;
+ALTER TABLE public.platform_staff ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.platform_staff FROM anon, authenticated;
 
 CREATE OR REPLACE FUNCTION public.is_reviewer()
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
-  SELECT EXISTS (SELECT 1 FROM public.platform_reviewers WHERE user_id = auth.uid())
+  SELECT EXISTS (SELECT 1 FROM public.platform_staff WHERE user_id = auth.uid())
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_platform_admin()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM public.platform_staff WHERE user_id = auth.uid() AND role = 'admin')
 $$;
 
 -- Clients: column-level grants hide the draft (body) and block changing review fields.
@@ -588,9 +596,47 @@ BEGIN
 END $$;
 
 REVOKE ALL ON FUNCTION public.is_reviewer() FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.is_platform_admin() FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.review_queue() FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.review_contract(uuid, text, text, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.is_reviewer() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_platform_admin() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.review_queue() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.review_contract(uuid, text, text, text) TO authenticated;
 
+-- Platform analytics for the admin panel (admins only). Aggregates only, plus the latest sign-ups.
+CREATE OR REPLACE FUNCTION public.platform_stats()
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE r jsonb;
+BEGIN
+  IF NOT public.is_platform_admin() THEN RAISE EXCEPTION 'not a platform admin'; END IF;
+  SELECT jsonb_build_object(
+    'users_total', (SELECT count(*) FROM auth.users),
+    'users_7d', (SELECT count(*) FROM auth.users WHERE created_at > now() - interval '7 days'),
+    'users_30d', (SELECT count(*) FROM auth.users WHERE created_at > now() - interval '30 days'),
+    'active_7d', (SELECT count(DISTINCT user_id) FROM public.audit_logs WHERE created_at > now() - interval '7 days'),
+    'account_types', (SELECT coalesce(jsonb_object_agg(coalesce(t::text, 'unset'), n), '{}') FROM
+      (SELECT account_type AS t, count(*) AS n FROM public.profiles GROUP BY 1) x),
+    'organizations', (SELECT count(*) FROM public.organizations),
+    'conversations', (SELECT count(*) FROM public.conversations),
+    'messages', (SELECT count(*) FROM public.messages),
+    'documents', (SELECT count(*) FROM public.documents),
+    'library_items', (SELECT count(*) FROM public.library_items),
+    'contracts', (SELECT coalesce(jsonb_object_agg(status, n), '{}') FROM
+      (SELECT status, count(*) AS n FROM public.contracts GROUP BY 1) x),
+    'ai_actions_30d', (SELECT coalesce(jsonb_object_agg(action, n), '{}') FROM
+      (SELECT action, count(*) AS n FROM public.audit_logs WHERE created_at > now() - interval '30 days' GROUP BY 1) x),
+    'daily', (SELECT coalesce(jsonb_agg(jsonb_build_object('day', d::date, 'signups', su, 'ai', ai) ORDER BY d), '[]') FROM (
+      SELECT d,
+        (SELECT count(*) FROM auth.users u WHERE u.created_at >= d AND u.created_at < d + interval '1 day') AS su,
+        (SELECT count(*) FROM public.audit_logs l WHERE l.action LIKE 'ai.%' AND l.created_at >= d AND l.created_at < d + interval '1 day') AS ai
+      FROM generate_series(date_trunc('day', now()) - interval '29 days', date_trunc('day', now()), interval '1 day') d) x),
+    'recent_users', (SELECT coalesce(jsonb_agg(x ORDER BY x.created_at DESC), '[]') FROM (
+      SELECT u.email, u.created_at, p.full_name, p.account_type
+      FROM auth.users u LEFT JOIN public.profiles p ON p.id = u.id
+      ORDER BY u.created_at DESC LIMIT 25) x)
+  ) INTO r;
+  RETURN r;
+END $$;
+REVOKE ALL ON FUNCTION public.platform_stats() FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.platform_stats() TO authenticated;
