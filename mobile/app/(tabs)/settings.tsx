@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import Constants from "expo-constants";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect, useNavigation } from "expo-router";
+import { useFocusEffect, useNavigation, useRouter } from "expo-router";
 import { setStatusBarStyle } from "expo-status-bar";
 import { type ReactNode, useCallback, useEffect, useLayoutEffect, useState } from "react";
 import {
@@ -11,6 +11,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { API_URL, supabase } from "../../lib/supabase";
+import { LAWYER_STATUS, type LawyerStatus } from "../lawyer";
 import { C, F, R, s, shadow } from "../../lib/theme";
 
 /** Same shape as the website's Letterhead (src/lib/docx-export.ts). */
@@ -44,7 +45,10 @@ export default function Settings() {
   const insets = useSafeAreaInsets();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [since, setSince] = useState("");
-  const [sheet, setSheet] = useState<"name" | "letterhead" | null>(null);
+  const router = useRouter();
+  const [sheet, setSheet] = useState<"name" | "letterhead" | "delete" | null>(null);
+  const [lawyerStatus, setLawyerStatus] = useState<LawyerStatus | null>(null);
+  const [confirmText, setConfirmText] = useState("");
   const [name, setName] = useState("");
   const [lh, setLh] = useState<Letterhead>({});
   const [busy, setBusy] = useState(false);
@@ -55,6 +59,14 @@ export default function Settings() {
     setStatusBarStyle("light");
     return () => setStatusBarStyle("dark");
   }, []));
+
+  // Lawyer verification status; refreshed whenever the tab regains focus (e.g. back from /lawyer).
+  const isLawyer = profile?.account_type === "lawyer";
+  useFocusEffect(useCallback(() => {
+    if (!isLawyer || !profile) return;
+    supabase.from("lawyer_profiles").select("status").eq("user_id", profile.id).maybeSingle()
+      .then(({ data }) => setLawyerStatus(((data as { status: LawyerStatus } | null)?.status) ?? null));
+  }, [isLawyer, profile?.id]));
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -90,6 +102,33 @@ export default function Settings() {
     if (n === profile?.numerals) return;
     Haptics.selectionAsync();
     save({ numerals: n });
+  }
+
+  /** Store requirement: in-app deletion. Own storage folders first (SQL can't delete storage objects), then the account. */
+  async function deleteAccount() {
+    if (!profile || confirmText.trim() !== "حذف") return;
+    setBusy(true);
+    try {
+      for (const bucket of ["documents", "lawyer-licences"]) {
+        // ponytail: one page of 1000 files per folder; loop on list() if users ever exceed that.
+        const { data, error } = await supabase.storage.from(bucket).list(profile.id, { limit: 1000 });
+        if (error) throw error;
+        const paths = (data ?? []).map((f) => `${profile.id}/${f.name}`);
+        if (paths.length) {
+          const { error: rmErr } = await supabase.storage.from(bucket).remove(paths);
+          if (rmErr) throw rmErr;
+        }
+      }
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+      setSheet(null);
+      await supabase.auth.signOut({ scope: "local" }); // the server session is gone with the user
+    } catch (e) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("تعذّر حذف الحساب", (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   }
 
   function signOut() {
@@ -136,6 +175,10 @@ export default function Settings() {
           <Row icon="person-outline" tint={C.teal} title="الاسم الكامل" value={fullName || "أضف اسمك"} onPress={profile ? () => openSheet("name") : undefined} />
           <Row icon="mail-outline" tint="#3b82f6" title="البريد الإلكتروني" value={email} />
           <Row icon="briefcase-outline" tint={C.navySoft} title="نوع الحساب" value={accountType} />
+          {isLawyer && (
+            <Row icon="ribbon-outline" tint={C.teal} title="توثيق حساب المحامي"
+              value={lawyerStatus ? LAWYER_STATUS[lawyerStatus]?.ar : "غير موثّق"} onPress={() => router.push("/lawyer")} />
+          )}
         </Section>
 
         <Section title="التفضيلات">
@@ -168,8 +211,8 @@ export default function Settings() {
 
         <Section>
           <Row icon="log-out-outline" tint={C.danger} title="تسجيل الخروج" danger onPress={signOut} />
-          <Row icon="trash-outline" tint={C.danger} title="طلب حذف الحساب" subtitle="يُرسل طلبك إلى فريق الدعم" danger
-            onPress={() => mail(`طلب حذف الحساب — ${email}`)} />
+          <Row icon="trash-outline" tint={C.danger} title="حذف الحساب" subtitle="حذف نهائي لحسابك وملفاتك" danger
+            onPress={profile ? () => (setConfirmText(""), setSheet("delete")) : undefined} />
         </Section>
 
         <Text style={[s.muted, { textAlign: "center", marginTop: 20 }]}>ميثاق العربية</Text>
@@ -178,6 +221,15 @@ export default function Settings() {
       <Sheet visible={sheet === "name"} title="الاسم الكامل" busy={busy} onClose={() => setSheet(null)}
         onSave={async () => { if (await save({ full_name: name.trim() })) setSheet(null); }}>
         <TextInput style={s.input} value={name} onChangeText={setName} placeholder="اكتب اسمك الكامل" placeholderTextColor={C.muted} autoFocus returnKeyType="done" />
+      </Sheet>
+
+      <Sheet visible={sheet === "delete"} title="حذف الحساب نهائياً" busy={busy} onClose={() => setSheet(null)}
+        onSave={deleteAccount} saveLabel="حذف الحساب" danger disabled={confirmText.trim() !== "حذف"}>
+        <Text style={s.text}>
+          سيُحذف حسابك وملفاتك المرفوعة وبياناتك الشخصية نهائياً ولا يمكن التراجع. قد تحتفظ المنصة بسجلات المستندات المعتمدة وسجل التدقيق وفق المتطلبات النظامية.
+        </Text>
+        <Text style={[s.muted, { fontFamily: F.medium }]}>للتأكيد اكتب كلمة «حذف»</Text>
+        <TextInput style={s.input} value={confirmText} onChangeText={setConfirmText} placeholder="حذف" placeholderTextColor={C.muted} autoCorrect={false} />
       </Sheet>
 
       <Sheet visible={sheet === "letterhead"} title="الترويسة الرسمية" busy={busy} onClose={() => setSheet(null)}
@@ -237,8 +289,9 @@ function Row({ icon, tint, title, subtitle, value, right, onPress, danger, exter
   );
 }
 
-function Sheet({ visible, title, busy, onClose, onSave, children }: {
+function Sheet({ visible, title, busy, onClose, onSave, children, saveLabel = "حفظ", danger, disabled }: {
   visible: boolean; title: string; busy: boolean; onClose: () => void; onSave: () => void; children: ReactNode;
+  saveLabel?: string; danger?: boolean; disabled?: boolean;
 }) {
   const insets = useSafeAreaInsets();
   return (
@@ -256,8 +309,9 @@ function Sheet({ visible, title, busy, onClose, onSave, children }: {
           <ScrollView contentContainerStyle={{ paddingHorizontal: 20, gap: 14, paddingBottom: 8 }} keyboardShouldPersistTaps="handled">
             {children}
           </ScrollView>
-          <Pressable style={[s.btn, { backgroundColor: C.teal, marginHorizontal: 20, marginTop: 12 }, busy && { opacity: 0.6 }]} onPress={onSave} disabled={busy}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>حفظ</Text>}
+          <Pressable style={[s.btn, { backgroundColor: danger ? C.danger : C.teal, marginHorizontal: 20, marginTop: 12 }, (busy || disabled) && { opacity: 0.5 }]}
+            onPress={onSave} disabled={busy || disabled} accessibilityRole="button">
+            {busy ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>{saveLabel}</Text>}
           </Pressable>
         </View>
       </KeyboardAvoidingView>

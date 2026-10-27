@@ -11,6 +11,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { useI18n } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { ConsentChecks, consentFields } from "./-consent";
 
 type Mode = "signin" | "signup" | "reset";
 
@@ -45,6 +46,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [agree, setAgree] = useState(false);
+  const [aiConsent, setAiConsent] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -62,12 +65,14 @@ function AuthPage() {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/app`,
-            data: { full_name: fullName },
+            // Kept in metadata too, so onboarding can record it if email confirmation delays the session.
+            data: { full_name: fullName, ai_processing_consent: aiConsent },
           },
         });
         if (error) throw error;
         // Auto-confirm projects return a session straight away: go to the app (onboarding follows).
-        if (data.session) {
+        if (data.session && data.user) {
+          await supabase.from("profiles").update(consentFields(aiConsent)).eq("id", data.user.id);
           navigate({ to: "/app" });
           return;
         }
@@ -178,7 +183,8 @@ function AuthPage() {
                 />
               </div>
             )}
-            <Button type="submit" className="w-full" size="lg" disabled={busy}>
+            {mode === "signup" && <ConsentChecks agree={agree} setAgree={setAgree} ai={aiConsent} setAi={setAiConsent} />}
+            <Button type="submit" className="w-full" size="lg" disabled={busy || (mode === "signup" && !agree)}>
               {mode === "signup"
                 ? t("auth.signUp")
                 : mode === "reset"

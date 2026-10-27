@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Briefcase, Check, Copy, Download, FileSignature, Handshake, Loader2, Printer, Sparkles, Trash2 } from "lucide-react";
+import { Briefcase, Check, Copy, Download, FileSignature, Handshake, Loader2, Printer, Sparkles, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,6 @@ const DISPUTE: Field = {
   key: "dispute", en: "Dispute resolution", ar: "تسوية المنازعات",
   options: [
     { v: "Saudi courts (competent court in the city of the contract)", en: "Saudi courts", ar: "المحاكم السعودية" },
-    { v: "Saudi Commercial Courts", en: "Commercial Courts", ar: "المحاكم التجارية" },
     { v: "Arbitration under the Saudi Center for Commercial Arbitration (SCCA) rules, seat Riyadh", en: "SCCA arbitration", ar: "التحكيم - المركز السعودي للتحكيم التجاري" },
   ],
 };
@@ -101,7 +100,29 @@ const TEMPLATES: Template[] = [
 ];
 
 type Status = "pending_review" | "approved" | "rejected";
-type Saved = { id: string; title: string; contract_type: string; language: string; inputs: Record<string, string>; status: Status; approved_body: string | null; review_note: string | null; created_at: string };
+type Kind = "contract" | "workflow" | "chat_draft";
+type Saved = {
+  id: string; kind: Kind; title: string; contract_type: string; language: string; inputs: Record<string, string>; status: Status;
+  approved_body: string | null; review_note: string | null; reviewer_name: string | null; reviewer_licence: string | null;
+  reviewed_at: string | null; created_at: string;
+};
+
+const KIND: Record<Kind, { ar: string; en: string }> = {
+  contract: { ar: "عقد", en: "Contract" },
+  workflow: { ar: "سير عمل", en: "Workflow" },
+  chat_draft: { ar: "مسودة من المحادثة", en: "Chat draft" },
+};
+
+/** Approval stamp shown on screen and carried into Word / Print. */
+function stampText(s: Saved, en: boolean): string {
+  if (s.status !== "approved" || !s.reviewer_name) return "";
+  const date = s.reviewed_at ? new Date(s.reviewed_at).toLocaleDateString(en ? "en-GB" : "ar-SA") : "";
+  return en
+    ? `Approved by: ${s.reviewer_name} — Licence no. ${s.reviewer_licence ?? "—"}${date ? ` — ${date}` : ""}`
+    : `اعتمده: ${s.reviewer_name} — ترخيص رقم ${s.reviewer_licence ?? "—"}${date ? ` — ${date}` : ""}`;
+}
+
+const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
 
 const STATUS: Record<Status, { ar: string; en: string; cls: string }> = {
   pending_review: { ar: "قيد مراجعة المحامي", en: "Awaiting lawyer review", cls: "bg-amber-100 text-amber-800" },
@@ -123,12 +144,18 @@ function ContractsPage() {
 
   async function load() {
     // Never select the AI draft (body): clients only see approved_body once a lawyer approves (per-instance review).
-    const { data } = await supabase.from("contracts").select("id,title,contract_type,language,inputs,status,approved_body,review_note,created_at").order("created_at", { ascending: false }).limit(50);
+    const { data } = await supabase.from("contracts")
+      .select("id,kind,title,contract_type,language,inputs,status,approved_body,review_note,reviewer_name,reviewer_licence,reviewed_at,created_at")
+      .is("hidden_at", null).order("created_at", { ascending: false }).limit(50);
     setSaved((data ?? []) as unknown as Saved[]);
   }
   useEffect(() => { load(); }, []);
 
-  function pick(t: Template) { setTpl(t); setStep(0); setValues({}); setOut(""); setViewing(null); }
+  function pick(t: Template) {
+    setTpl(t); setStep(0); setValues({}); setOut(""); setViewing(null);
+    // Employment contracts are Arabic or bilingual (Arabic prevails) — never English-only.
+    if (t.id === "employment" && outLang === "en") setOutLang("ar");
+  }
 
   const last = step === tpl.steps.length;
 
@@ -155,7 +182,7 @@ ${details}`;
       const res = await fetch("/api/contracts", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token}` },
-        body: JSON.stringify({ title, contract_type: tpl.id, language: outLang, inputs: values, prompt }),
+        body: JSON.stringify({ kind: "contract", title, contract_type: tpl.id, language: outLang, inputs: values, prompt }),
       });
       if (!res.ok) throw new Error((await res.text()) || "AI error");
       toast.success(ar ? "أُرسل العقد إلى المحامي للمراجعة. ستتمكن من عرضه وتنزيله بعد اعتماده." : "Sent to our lawyer for review. You can view and download it once approved.");
@@ -164,29 +191,38 @@ ${details}`;
     finally { setBusy(false); }
   }
 
-  async function remove(id: string) {
-    const { error } = await supabase.from("contracts").delete().eq("id", id);
+  async function hide(id: string) {
+    if (!window.confirm(ar ? "إخفاء من القائمة؛ تبقى نسخة الاعتماد محفوظة." : "Hide from your list? The approved record is kept.")) return;
+    const { error } = await supabase.rpc("hide_contract", { _id: id });
     if (error) { toast.error(error.message); return; }
     if (id === viewing?.id) { setViewing(null); setOut(""); }
     load();
   }
 
   function open(s: Saved) {
-    const t = TEMPLATES.find((x) => x.id === s.contract_type) ?? TEMPLATES[0]!;
-    setTpl(t); setValues(s.inputs ?? {}); setViewing(s); setOutLang((s.language as "ar" | "en" | "both") ?? "ar");
-    setOut(s.status === "approved" ? s.approved_body ?? "" : ""); setStep(t.steps.length);
+    // Workflow / chat drafts have no builder template: just show the document.
+    const t = s.kind === "contract" ? TEMPLATES.find((x) => x.id === s.contract_type) : undefined;
+    if (t) { setTpl(t); setValues(s.inputs ?? {}); setStep(t.steps.length); }
+    setViewing(s); setOutLang((s.language as "ar" | "en" | "both") ?? "ar");
+    setOut(s.status === "approved" ? s.approved_body ?? "" : "");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const docTitle = viewing?.title ?? tpl.en;
+  const stamp = viewing ? stampText(viewing, outLang === "en") : "";
+
   async function exportWord() {
-    await downloadDocx({ title: tpl.en, markdown: out, letterhead: await loadLetterhead(), lang: outLang === "en" ? "en" : "ar" }, tpl.en.replace(/\s+/g, "-"));
+    await downloadDocx(
+      { title: docTitle, markdown: out, letterhead: await loadLetterhead(), lang: outLang === "en" ? "en" : "ar", ...(stamp ? { stamp } : {}) },
+      docTitle.replace(/\s+/g, "-"),
+    );
   }
 
   function print() {
     const w = window.open("", "_blank");
     if (!w) return;
     const html = document.getElementById("contract-output")?.innerHTML ?? "";
-    w.document.write(`<html dir="${outLang === "en" ? "ltr" : "rtl"}"><head><title>${tpl.en}</title><style>body{font-family:'IBM Plex Sans Arabic','Nunito Sans',sans-serif;max-width:800px;margin:40px auto;line-height:1.8;padding:0 24px}h1,h2,h3{margin-top:1.2em}</style></head><body>${html}</body></html>`);
+    w.document.write(`<html dir="${outLang === "en" ? "ltr" : "rtl"}"><head><title>${esc(docTitle)}</title><style>body{font-family:'IBM Plex Sans Arabic','Nunito Sans',sans-serif;max-width:800px;margin:40px auto;line-height:1.8;padding:0 24px}h1,h2,h3{margin-top:1.2em}.stamp{margin-top:32px;border:1.5px solid #1F3A5F;padding:10px 14px;text-align:center;font-weight:600}</style></head><body>${html}${stamp ? `<div class="stamp">${esc(stamp)}</div>` : ""}</body></html>`);
     w.document.close(); w.focus(); w.print();
   }
 
@@ -252,9 +288,12 @@ ${details}`;
                 <select className="h-10 rounded-lg border border-input bg-background px-3 text-base sm:text-sm" value={outLang} onChange={(e) => setOutLang(e.target.value as "ar" | "en" | "both")}>
                   <option value="ar">{ar ? "العربية" : "Arabic"}</option>
                   <option value="both">{ar ? "ثنائي اللغة" : "Bilingual (AR / EN)"}</option>
-                  <option value="en">{ar ? "الإنجليزية" : "English"}</option>
+                  {tpl.id !== "employment" && <option value="en">{ar ? "الإنجليزية" : "English"}</option>}
                 </select>
               </label>
+              {tpl.id === "employment" && (
+                <p className="text-xs text-muted-foreground">{ar ? "عقد العمل بالعربية أو ثنائي اللغة، والنص العربي هو المعتمد." : "Employment contracts are Arabic or bilingual; the Arabic text prevails."}</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 {ar ? "الحقول الفارغة ستظهر كفراغات [ ____ ] لتعبئتها لاحقاً." : "Empty fields will appear as [ ____ ] blanks to fill later."}
               </p>
@@ -276,6 +315,7 @@ ${details}`;
                 <Button size="sm" variant="ghost" disabled={busy} onClick={exportWord}><Download className="size-4" /> {ar ? "Word (.docx)" : "Word (.docx)"}</Button>
                 <Button size="sm" variant="ghost" disabled={busy} onClick={print}><Printer className="size-4" /> {ar ? "طباعة / PDF" : "Print / PDF"}</Button>
               </div>
+              {stamp && <p className="mb-3 rounded-lg border border-teal/40 bg-teal/5 px-3 py-2 text-center text-xs font-semibold text-navy">{stamp}</p>}
               <div id="contract-output" dir={outLang === "en" ? "ltr" : "rtl"}
                 className="break-words text-sm leading-loose [&_table]:block [&_table]:overflow-x-auto [&_h1]:mt-4 [&_h1]:text-center [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-4 [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_p]:my-2 [&_ul]:list-disc">
                 <ReactMarkdown>{out}</ReactMarkdown>
@@ -284,12 +324,12 @@ ${details}`;
           ) : busy ? (
             <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> {ar ? "جارٍ إنشاء العقد وإرساله للمحامي للمراجعة…" : "Drafting and sending to our lawyer for review…"}</p>
           ) : viewing?.status === "pending_review" ? (
-            <p className="text-sm text-amber-800">{ar ? "هذا العقد قيد مراجعة المحامي. ستتمكن من عرضه وتنزيله بعد اعتماده." : "This contract is with our lawyer for review. You can view and download it once approved."}</p>
+            <p className="text-sm text-amber-800">{ar ? "هذا المستند قيد مراجعة محامٍ مرخّص. ستتمكن من عرضه وتنزيله بعد اعتماده." : "This document is with a licensed lawyer for review. You can view and download it once approved."}</p>
           ) : viewing?.status === "rejected" ? (
             <div className="text-sm">
-              <p className="font-medium text-destructive">{ar ? "لم يعتمد المحامي هذا العقد." : "Our lawyer did not approve this contract."}</p>
+              <p className="font-medium text-destructive">{ar ? "لم يعتمد المحامي هذا المستند." : "The lawyer did not approve this document."}</p>
               {viewing.review_note && <p className="mt-2 whitespace-pre-wrap">{viewing.review_note}</p>}
-              <p className="mt-2 text-muted-foreground">{ar ? "عدّل البيانات وأنشئ العقد من جديد." : "Adjust the details and generate again."}</p>
+              <p className="mt-2 text-muted-foreground">{ar ? "عدّل البيانات وأنشئه من جديد." : "Adjust the details and generate again."}</p>
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">{ar ? "بعد الإنشاء يُرسل العقد إلى محامينا للمراجعة، ثم يظهر هنا بعد اعتماده." : "After generating, the contract goes to our lawyer for review and appears here once approved."}</p>
@@ -300,18 +340,21 @@ ${details}`;
         </div>
       </div>
 
-      <h2 className="mt-10 text-lg font-semibold text-navy">{ar ? "عقودي" : "My contracts"}</h2>
+      <h2 className="mt-10 text-lg font-semibold text-navy">{ar ? "مستنداتي" : "My documents"}</h2>
       {saved.length === 0 ? (
-        <p className="mt-2 text-sm text-muted-foreground">{ar ? "لا توجد عقود بعد." : "No contracts yet."}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{ar ? "لا توجد مستندات بعد." : "No documents yet."}</p>
       ) : (
         <ul className="mt-3 divide-y divide-border rounded-2xl border border-border bg-card">
           {saved.map((s) => (
             <li key={s.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <button className="min-w-0 break-words py-1 text-start text-sm font-medium text-navy hover:text-teal" onClick={() => open(s)}>{s.title}</button>
+              <button className="grid min-w-0 gap-0.5 break-words py-1 text-start" onClick={() => open(s)}>
+                <span className="text-sm font-medium text-navy hover:text-teal">{s.title}</span>
+                <span className="text-xs text-muted-foreground">{ar ? KIND[s.kind]?.ar ?? s.kind : KIND[s.kind]?.en ?? s.kind}</span>
+              </button>
               <div className="flex shrink-0 items-center gap-1 sm:gap-3">
                 <span className={`rounded-full px-2 py-0.5 text-xs ${STATUS[s.status].cls}`}>{ar ? STATUS[s.status].ar : STATUS[s.status].en}</span>
                 <span className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString(ar ? "ar-SA" : "en-GB")}</span>
-                <button aria-label="Delete" onClick={() => remove(s.id)} className="-me-2 p-2.5 text-muted-foreground hover:text-destructive"><Trash2 className="size-4" /></button>
+                <button aria-label={ar ? "إخفاء" : "Hide"} title={ar ? "إخفاء" : "Hide"} onClick={() => hide(s.id)} className="-me-2 p-2.5 text-muted-foreground hover:text-destructive"><EyeOff className="size-4" /></button>
               </div>
             </li>
           ))}

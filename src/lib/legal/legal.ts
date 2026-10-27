@@ -8,6 +8,7 @@ export type Chunk = {
   ref: string; // normalized article number, "" when the source has no article structure
   text: string;
   sourceUrl: string | null;
+  origin?: "official" | "user"; // "user" = the caller's own library note, never an official source (default official)
 };
 
 export type Source = Chunk & { id: number };
@@ -81,6 +82,13 @@ export function rank(query: string, chunks: Chunk[], k = 5, jurisdiction?: strin
     .map((x, i) => ({ ...x.c, id: i + 1 }));
 }
 
+const isUser = (s: Chunk) => s.origin === "user";
+
+/** Header line for a source in the model context; user notes are labelled so they are never taken as law. */
+export const sourceLabel = (s: Chunk) =>
+  `${s.title}${s.ref ? ` — Article ${s.ref}` : ""}` +
+  (isUser(s) ? " — USER NOTE, not an official source" : ` (${s.jurisdiction ?? "—"}, ${s.status})${s.sourceUrl ? ` ${s.sourceUrl}` : ""}`);
+
 export type Verification = {
   text: string;
   grounded: boolean;
@@ -104,30 +112,36 @@ export function verifyAnswer(answer: string, sources: Source[]): Verification {
     stripped.push(id);
     return "";
   });
+  const official = sources.filter((s) => !isUser(s));
+  const citedOfficial = [...cited].filter((id) => official.some((s) => s.id === id));
+  const citedNotes = [...cited].filter((id) => !citedOfficial.includes(id));
   const repealed = [...cited].filter((id) => sources.find((s) => s.id === id)?.status === "repealed");
   const known = new Set(sources.map((s) => s.ref).filter(Boolean));
   const unverifiedArticles = [...new Set(articleNumbers(text))].filter((n) => !known.has(n));
 
   const ar = /[\u0600-\u06FF]/.test(answer);
   const notes: string[] = [];
-  if (sources.length === 0) {
+  if (official.length === 0) {
     notes.push(ar ? "⚠ لم يُعثر على مصدر في المكتبة القانونية؛ هذه الإجابة غير موثّقة ولا تُعدّ مرجعاً." : "⚠ No source was found in the legal library; this answer is not grounded and must not be relied on as authority.");
-  } else if (cited.size === 0) {
+  } else if (citedOfficial.length === 0) {
     notes.push(ar ? "⚠ لا توجد استشهادات موثّقة في هذه الإجابة." : "⚠ This answer contains no verified citation.");
   }
   if (repealed.length) notes.push(ar ? `⚠ مصادر ملغاة مذكورة: ${repealed.map((i) => `[S${i}]`).join(" ")}` : `⚠ Cites repealed provision(s): ${repealed.map((i) => `[S${i}]`).join(" ")}`);
   if (unverifiedArticles.length && sources.length > 0) {
     notes.push(ar ? `⚠ مواد غير موجودة في المصادر المسترجعة (تحقق منها): ${unverifiedArticles.join("، ")}` : `⚠ Article(s) not found in retrieved sources (verify manually): ${unverifiedArticles.join(", ")}`);
   }
-  if (cited.size) {
-    const list = [...cited].sort((a, b) => a - b).map((id) => {
-      const s = sources.find((x) => x.id === id)!;
-      return `[S${id}] ${s.title}${s.ref ? (ar ? ` — المادة ${s.ref}` : ` — Art. ${s.ref}`) : ""}`;
-    });
-    notes.push((ar ? "المصادر المتحقق منها:\n" : "Verified sources:\n") + list.join("\n"));
-  }
+  const list = (ids: number[]) =>
+    ids
+      .sort((a, b) => a - b)
+      .map((id) => {
+        const s = sources.find((x) => x.id === id)!;
+        return `[S${id}] ${s.title}${s.ref ? (ar ? ` — المادة ${s.ref}` : ` — Art. ${s.ref}`) : ""}`;
+      })
+      .join("\n");
+  if (citedOfficial.length) notes.push((ar ? "المصادر المتحقق منها:\n" : "Verified sources:\n") + list(citedOfficial));
+  if (citedNotes.length) notes.push((ar ? "ملاحظاتك (غير موثّقة):\n" : "Your notes (not verified):\n") + list(citedNotes));
   if (notes.length) text += `\n\n---\n${notes.join("\n")}`;
-  return { text, grounded: sources.length > 0, stripped, repealed, unverifiedArticles, validCitations: cited.size };
+  return { text, grounded: official.length > 0, stripped, repealed, unverifiedArticles, validCitations: citedOfficial.length };
 }
 
 /** One hop along the citation graph: pull in articles that a retrieved article refers to (same instrument). */

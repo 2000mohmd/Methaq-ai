@@ -23,6 +23,12 @@ const STATUS: Record<string, { ar: string; en: string; cls: string }> = {
   rejected: { ar: "مرفوض", en: "Rejected", cls: "bg-destructive/10 text-destructive" },
 };
 
+const KIND: Record<string, { ar: string; en: string }> = {
+  contract: { ar: "عقد", en: "Contract" },
+  workflow: { ar: "سير عمل", en: "Workflow" },
+  chat_draft: { ar: "مسودة من المحادثة", en: "Chat draft" },
+};
+
 function Review() {
   const { lang } = useI18n();
   const ar = lang === "ar";
@@ -60,7 +66,12 @@ function Review() {
     setBusy(true);
     const { error } = await supabase.rpc("review_contract", { _id: sel.id, _decision: decision, _body: body, _note: note });
     setBusy(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message.includes("reviewer licence number missing")
+        ? (ar ? "يجب تسجيل رقم ترخيص المحامي لهذا المراجع قبل الاعتماد." : "A lawyer licence number must be recorded for this reviewer before approving.")
+        : error.message);
+      return;
+    }
     toast.success(decision === "approved" ? (ar ? "تم اعتماد العقد" : "Contract approved") : (ar ? "تم رفض العقد" : "Contract rejected"));
     setSel(null);
     load();
@@ -78,6 +89,7 @@ function Review() {
     );
   }
 
+  const kindLabel = (k: string) => (KIND[k] ? (ar ? KIND[k].ar : KIND[k].en) : k);
   const shown = filter === "pending" ? items.filter((i) => i.status === "pending_review") : items;
   const rtl = (sel?.language ?? "ar") !== "en";
   const inputs = sel && sel.inputs && typeof sel.inputs === "object" && !Array.isArray(sel.inputs) ? Object.entries(sel.inputs) : [];
@@ -114,7 +126,7 @@ function Review() {
                         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${s.cls}`}>{ar ? s.ar : s.en}</span>
                       </span>
                       <span className="flex justify-between gap-2 text-xs text-muted-foreground">
-                        <span className="min-w-0 truncate" dir="ltr">{c.author_email ?? "—"}</span>
+                        <span className="min-w-0 truncate"><span>{kindLabel(c.kind)}</span> · <span dir="ltr">{c.author_email ?? "—"}</span></span>
                         <span className="shrink-0">{new Date(c.created_at).toLocaleDateString(ar ? "ar-SA" : "en-GB")}</span>
                       </span>
                     </button>
@@ -132,8 +144,17 @@ function Review() {
             <div className="grid gap-4">
               <div>
                 <h2 className="break-words font-semibold text-navy">{sel.title}</h2>
-                <p className="text-xs text-muted-foreground">{sel.contract_type} · <span dir="ltr">{sel.author_email}</span></p>
+                <p className="text-xs text-muted-foreground">{kindLabel(sel.kind)} · {sel.contract_type} · <span dir="ltr">{sel.author_email}</span></p>
               </div>
+
+              {sel.status !== "pending_review" && (
+                <p className={`rounded-lg border px-3 py-2 text-xs ${sel.status === "approved" ? "border-teal/40 bg-teal/5 text-navy" : "border-destructive/30 bg-destructive/5 text-destructive"}`}>
+                  {sel.status === "approved"
+                    ? (ar ? `اعتمده: ${sel.reviewer_name ?? "—"} — ترخيص رقم ${sel.reviewer_licence ?? "—"}` : `Approved by: ${sel.reviewer_name ?? "—"} — Licence no. ${sel.reviewer_licence ?? "—"}`)
+                    : (ar ? "مرفوض" : "Rejected")}
+                  {sel.reviewed_at && ` — ${new Date(sel.reviewed_at).toLocaleDateString(ar ? "ar-SA" : "en-GB")}`}
+                </p>
+              )}
 
               {inputs.length > 0 && (
                 <section>

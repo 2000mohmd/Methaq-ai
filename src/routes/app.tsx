@@ -1,29 +1,23 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
+  BadgeCheck,
   BarChart3,
   Bell,
-  Building2,
-  CalendarDays,
   Coins,
   FileSearch,
   FileText,
   FolderOpen,
-  Gavel,
   LayoutGrid,
   LibraryBig,
-  ListTodo,
   Mail,
   MessageSquare,
-  PanelsTopLeft,
-  Receipt,
   Scale,
   Search,
   Settings,
   ShieldCheck,
   Sparkles,
   FileSignature,
-  Timer,
   UserRound,
   Users,
 } from "lucide-react";
@@ -64,16 +58,10 @@ const GROUPS = [
   {
     label: "app.groupEfirm",
     items: [
-      { to: "/app/matters", key: "app.matters", icon: Gavel },
+      // Unfinished modules (matters, KYC, leads, tasks, calendar, time, billing, HR) are hidden
+      // from navigation/search until they're ready; their routes still exist.
       { to: "/app/clients", key: "app.clients", icon: Users },
-      { to: "/app/kyc", key: "app.kyc", icon: ShieldCheck },
-      { to: "/app/leads", key: "app.leads", icon: PanelsTopLeft },
-      { to: "/app/tasks", key: "app.tasks", icon: ListTodo },
-      { to: "/app/calendar", key: "app.calendar", icon: CalendarDays },
-      { to: "/app/time", key: "app.time", icon: Timer },
-      { to: "/app/billing", key: "app.billing", icon: Receipt },
       { to: "/app/emails", key: "app.emails", icon: Mail },
-      { to: "/app/hr", key: "app.hr", icon: Building2 },
       { to: "/app/documents", key: "app.documents", icon: FolderOpen },
     ],
   },
@@ -108,6 +96,9 @@ const INDIVIDUAL_GROUPS = [
 // admins see analytics + review, lawyers see review only.
 const PLATFORM_ITEM = { to: "/app/platform", key: "app.platform", icon: BarChart3 } as const;
 const REVIEW_ITEM = { to: "/app/review", key: "app.review", icon: Scale } as const;
+const LAWYERS_ITEM = { to: "/app/lawyers", key: "app.lawyers", icon: BadgeCheck } as const;
+// Lawyer accounts submit their licence for verification.
+const LAWYER_ITEM = { to: "/app/lawyer", key: "app.lawyerVerify", icon: BadgeCheck } as const;
 
 function AppShell() {
   const { t } = useI18n();
@@ -173,7 +164,7 @@ function AppShell() {
   // Individuals can't open firm-management pages by typing the URL.
   const pathname = useLocation({ select: (l) => l.pathname });
   const individual = profile?.account_type === "individual";
-  const allowed = INDIVIDUAL_GROUPS[0].items.some((i) => pathname.startsWith(i.to)) || pathname.startsWith("/app/review") || pathname.startsWith("/app/platform") || pathname === "/app" || pathname === "/app/";
+  const allowed = INDIVIDUAL_GROUPS[0].items.some((i) => pathname.startsWith(i.to)) || pathname.startsWith("/app/review") || pathname.startsWith("/app/platform") || pathname.startsWith("/app/lawyer") || pathname === "/app" || pathname === "/app/";
   useEffect(() => {
     if (!checking && individual && !allowed) navigate({ to: "/app/chat" });
   }, [checking, individual, allowed, navigate]);
@@ -183,12 +174,15 @@ function AppShell() {
     navigate({ to: "/" });
   }
 
-  const baseGroups = isClient
+  const roleGroups = isClient
     ? [{ label: "app.groupMore", items: [{ to: "/app/portal", key: "app.portal", icon: UserRound }] as const }]
     : individual
       ? INDIVIDUAL_GROUPS
       : GROUPS;
-  const staffItems = [...(isAdmin ? [PLATFORM_ITEM] : []), ...(isReviewer ? [REVIEW_ITEM] : [])];
+  const baseGroups = !isClient && profile?.account_type === "lawyer"
+    ? roleGroups.map((g) => (g.label === "app.groupMore" ? { ...g, items: [LAWYER_ITEM, ...g.items] } : g))
+    : roleGroups;
+  const staffItems = [...(isAdmin ? [PLATFORM_ITEM, LAWYERS_ITEM] : []), ...(isReviewer ? [REVIEW_ITEM] : [])];
   const groups = staffItems.length ? [...baseGroups, { label: "app.groupReview", items: staffItems }] : baseGroups;
   const navPages = (isClient ? groups.slice(1) : groups).flatMap((g) => g.items.map((i) => ({ to: i.to as string, label: t(i.key) })));
 

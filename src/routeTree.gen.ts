@@ -34,6 +34,8 @@ import { Route as AppDocumentsRouteImport } from './routes/app/documents'
 import { Route as AppEmailsRouteImport } from './routes/app/emails'
 import { Route as AppHrRouteImport } from './routes/app/hr'
 import { Route as AppKycRouteImport } from './routes/app/kyc'
+import { Route as AppLawyerRouteImport } from './routes/app/lawyer'
+import { Route as AppLawyersRouteImport } from './routes/app/lawyers'
 import { Route as AppLeadsRouteImport } from './routes/app/leads'
 import { Route as AppLibraryRouteImport } from './routes/app/library'
 import { Route as AppMattersRouteImport } from './routes/app/matters'
@@ -170,6 +172,16 @@ const AppKycRoute = AppKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLawyerRoute = AppLawyerRouteImport.update({
+  id: '/lawyer',
+  path: '/lawyer',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLawyersRoute = AppLawyersRouteImport.update({
+  id: '/lawyers',
+  path: '/lawyers',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLeadsRoute = AppLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -246,6 +258,8 @@ export interface FileRoutesByFullPath {
   '/app/emails': typeof AppEmailsRoute
   '/app/hr': typeof AppHrRoute
   '/app/kyc': typeof AppKycRoute
+  '/app/lawyer': typeof AppLawyerRoute
+  '/app/lawyers': typeof AppLawyersRoute
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
@@ -282,6 +296,8 @@ export interface FileRoutesByTo {
   '/app/emails': typeof AppEmailsRoute
   '/app/hr': typeof AppHrRoute
   '/app/kyc': typeof AppKycRoute
+  '/app/lawyer': typeof AppLawyerRoute
+  '/app/lawyers': typeof AppLawyersRoute
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
@@ -320,6 +336,8 @@ export interface FileRoutesById {
   '/app/emails': typeof AppEmailsRoute
   '/app/hr': typeof AppHrRoute
   '/app/kyc': typeof AppKycRoute
+  '/app/lawyer': typeof AppLawyerRoute
+  '/app/lawyers': typeof AppLawyersRoute
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
@@ -359,6 +377,8 @@ export interface FileRouteTypes {
     | '/app/emails'
     | '/app/hr'
     | '/app/kyc'
+    | '/app/lawyer'
+    | '/app/lawyers'
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
@@ -395,6 +415,8 @@ export interface FileRouteTypes {
     | '/app/emails'
     | '/app/hr'
     | '/app/kyc'
+    | '/app/lawyer'
+    | '/app/lawyers'
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
@@ -432,6 +454,8 @@ export interface FileRouteTypes {
     | '/app/emails'
     | '/app/hr'
     | '/app/kyc'
+    | '/app/lawyer'
+    | '/app/lawyers'
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
@@ -638,6 +662,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKycRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/lawyer': {
+      id: '/app/lawyer'
+      path: '/lawyer'
+      fullPath: '/app/lawyer'
+      preLoaderRoute: typeof AppLawyerRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/lawyers': {
+      id: '/app/lawyers'
+      path: '/lawyers'
+      fullPath: '/app/lawyers'
+      preLoaderRoute: typeof AppLawyersRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/leads': {
       id: '/app/leads'
       path: '/leads'
@@ -723,6 +761,8 @@ interface AppRouteChildren {
   AppEmailsRoute: typeof AppEmailsRoute
   AppHrRoute: typeof AppHrRoute
   AppKycRoute: typeof AppKycRoute
+  AppLawyerRoute: typeof AppLawyerRoute
+  AppLawyersRoute: typeof AppLawyersRoute
   AppLeadsRoute: typeof AppLeadsRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppMattersRoute: typeof AppMattersRoute
@@ -748,6 +788,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppEmailsRoute: AppEmailsRoute,
   AppHrRoute: AppHrRoute,
   AppKycRoute: AppKycRoute,
+  AppLawyerRoute: AppLawyerRoute,
+  AppLawyersRoute: AppLawyersRoute,
   AppLeadsRoute: AppLeadsRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppMattersRoute: AppMattersRoute,

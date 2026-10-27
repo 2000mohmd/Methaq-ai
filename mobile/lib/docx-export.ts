@@ -49,7 +49,11 @@ function para(line: string, rtl: boolean): Paragraph {
   });
 }
 
-export function buildDocx(opts: { title: string; markdown: string; letterhead?: Letterhead; lang?: "ar" | "en"; date?: Date; logoPng?: Uint8Array }): Document {
+export function buildDocx(opts: {
+  title: string; markdown: string; letterhead?: Letterhead; lang?: "ar" | "en"; date?: Date; logoPng?: Uint8Array;
+  /** Approval stamp ("اعتمده: … — ترخيص رقم … — date"), rendered as a bordered paragraph at the end. */
+  stamp?: string;
+}): Document {
   const lang = opts.lang ?? (hasArabic(opts.markdown) ? "ar" : "en");
   const rtl = lang === "ar";
   const l = opts.letterhead ?? {};
@@ -84,6 +88,17 @@ export function buildDocx(opts: { title: string; markdown: string; letterhead?: 
   });
 
   const body = opts.markdown.split("\n").filter((x) => x.trim()).map((line) => para(line, rtl && hasArabic(line) ? true : rtl));
+  if (opts.stamp) {
+    const side = { style: BorderStyle.SINGLE, size: 12, color: "02A79F", space: 6 };
+    const stampRtl = hasArabic(opts.stamp);
+    body.push(new Paragraph({
+      alignment: AlignmentType.CENTER,
+      bidirectional: stampRtl,
+      spacing: { before: 480 },
+      border: { top: side, bottom: side, left: side, right: side },
+      children: [new TextRun({ text: opts.stamp, bold: true, size: 22, font: FONT, color: "11374A", rightToLeft: stampRtl })],
+    }));
+  }
 
   return new Document({
     title: opts.title,

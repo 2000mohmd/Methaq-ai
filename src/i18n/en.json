@@ -3,7 +3,6 @@
   "brand.descriptor": "for Law and Legal Consultancy",
   "brand.tagline": "Your Voice in the Legal Arena",
   "brand.tagline2": "Legal Wisdom, Strategic Counsel",
-  "brand.rights": "I wish to remain silent. I want to speak to a lawyer. I do not consent to a search.",
   "nav.products": "Products",
   "nav.chat": "Mithaq Chat",
   "nav.efirm": "Mithaq eFirm",
@@ -97,5 +96,12 @@
   "common.loading": "Loading",
   "common.error": "Something went wrong",
   "app.admin": "Admin console",
-  "app.portal": "Client portal"
+  "app.portal": "Client portal",
+  "consent.agreePrefix": "I agree to the",
+  "consent.terms": "Terms of Use",
+  "consent.and": "and",
+  "consent.privacy": "Privacy Policy",
+  "consent.ai": "I agree to my data being processed by an AI provider outside Saudi Arabia after personal data is masked (optional)",
+  "app.lawyerVerify": "Account verification",
+  "app.lawyers": "Lawyer approvals"
 }

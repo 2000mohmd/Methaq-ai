@@ -20,7 +20,7 @@ export default function ChatScreen() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState("research");
-  const [juris, setJuris] = useState("Saudi Arabia");
+  const juris = "Saudi Arabia"; // Saudi-only app
   const [listOpen, setListOpen] = useState(false);
   const scrollRef = useRef<ScrollViewInstance>(null);
 
@@ -144,8 +144,6 @@ export default function ChatScreen() {
           busy={busy}
           mode={mode}
           setMode={setMode}
-          juris={juris}
-          setJuris={setJuris}
         />
       </KeyboardAvoidingView>
 

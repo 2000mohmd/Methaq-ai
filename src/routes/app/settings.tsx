@@ -1,8 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { fetchProfile, type Profile } from "@/hooks/useAuth";
@@ -118,6 +127,75 @@ function Settings() {
       <Button variant="teal" onClick={save} disabled={busy || !profile}>
         {ar ? "حفظ" : "Save"}
       </Button>
+
+      {profile && <DeleteAccount uid={profile.id} ar={ar} />}
     </div>
+  );
+}
+
+// Removes every file under `${uid}/` in a bucket (Storage API; the DB can't delete storage rows directly).
+async function removeFolder(bucket: string, uid: string) {
+  const store = supabase.storage.from(bucket);
+  for (;;) {
+    const { data, error } = await store.list(uid, { limit: 1000 });
+    if (error) throw error;
+    const files = (data ?? []).filter((f) => f.id).map((f) => `${uid}/${f.name}`);
+    if (files.length === 0) return;
+    const { data: removed, error: rmError } = await store.remove(files);
+    if (rmError) throw rmError;
+    // Nothing removed means no delete permission on this bucket: stop rather than loop forever.
+    if (!removed?.length) return;
+  }
+}
+
+function DeleteAccount({ uid, ar }: { uid: string; ar: boolean }) {
+  const navigate = useNavigate();
+  const [confirm, setConfirm] = useState("");
+  const [busy, setBusy] = useState(false);
+  const ok = confirm.trim() === "حذف" || confirm.trim().toUpperCase() === "DELETE";
+
+  async function deleteAccount() {
+    setBusy(true);
+    try {
+      await removeFolder("documents", uid);
+      await removeFolder("lawyer-licences", uid);
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+      await supabase.auth.signOut();
+      navigate({ to: "/" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : ar ? "حدث خطأ" : "Something went wrong");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="space-y-3 rounded-2xl border border-destructive/40 bg-card p-4 shadow-soft sm:p-6">
+      <h2 className="font-semibold text-destructive">{ar ? "منطقة الخطر" : "Danger zone"}</h2>
+      <p className="text-sm text-muted-foreground">
+        {ar
+          ? "حذف حسابك نهائياً يزيل ملفاتك الشخصية وبيانات حسابك ولا يمكن التراجع عنه."
+          : "Permanently deleting your account removes your personal files and account data. This cannot be undone."}
+      </p>
+      <Dialog onOpenChange={(open) => !open && setConfirm("")}>
+        <DialogTrigger asChild>
+          <Button variant="destructive">{ar ? "حذف الحساب نهائياً" : "Delete account permanently"}</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{ar ? "حذف الحساب نهائياً" : "Delete account permanently"}</DialogTitle>
+            <DialogDescription>
+              {ar ? "للتأكيد اكتب «حذف» (أو DELETE) في الحقل أدناه." : "To confirm, type DELETE (or «حذف») below."}
+            </DialogDescription>
+          </DialogHeader>
+          <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" aria-label={ar ? "تأكيد الحذف" : "Confirm deletion"} />
+          <DialogFooter>
+            <Button variant="destructive" disabled={!ok || busy} onClick={deleteAccount}>
+              {ar ? "حذف نهائي" : "Delete forever"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </section>
   );
 }

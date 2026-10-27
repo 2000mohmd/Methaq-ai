@@ -41,13 +41,14 @@ export default function RootLayout() {
     return () => data.subscription.unsubscribe();
   }, []);
 
-  // profiles.onboarded for the signed-in user (same gate as the website's /app shell).
+  // profiles.onboarded + consent for the signed-in user (same gate as the website's /app shell).
+  // A profile without consented_at (e.g. joined via invitation) goes to onboarding to accept the terms.
   useEffect(() => {
     setOnboarded(undefined);
     if (!uid) return;
     let live = true;
     (async () => {
-      const load = () => supabase.from("profiles").select("onboarded").eq("id", uid).maybeSingle();
+      const load = () => supabase.from("profiles").select("onboarded,consented_at").eq("id", uid).maybeSingle();
       let { data, error } = await load();
       if (data && !data.onboarded) {
         // Pending invitations (team member / client) join the firm and mark the profile onboarded.
@@ -55,7 +56,7 @@ export default function RootLayout() {
         if (typeof claimed === "number" && claimed > 0) ({ data, error } = await load());
       }
       // On a read error, let them in rather than risk creating a duplicate workspace.
-      if (live) setOnboarded(error ? true : !!data?.onboarded);
+      if (live) setOnboarded(error ? true : !!data?.onboarded && !!data?.consented_at);
     })();
     return () => {
       live = false;
@@ -76,7 +77,10 @@ export default function RootLayout() {
     let target: Href | null = null;
     if (!session) target = inAuth ? null : "/welcome";
     else if (!onboarded) target = top === "onboarding" ? null : "/onboarding";
-    else if (!top || top === "index" || inAuth || top === "onboarding") target = "/(tabs)/chat";
+    else if (top === "onboarding" && onboardingSignal.next) {
+      target = onboardingSignal.next; // e.g. lawyers continue to licence verification
+      onboardingSignal.next = null;
+    } else if (!top || top === "index" || inAuth || top === "onboarding") target = "/(tabs)/chat";
     if (target) router.replace(target);
   }, [ready, session, onboarded, top, router]);
 

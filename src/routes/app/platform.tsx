@@ -55,12 +55,14 @@ function Platform() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lawyers, setLawyers] = useState<Record<string, number>>({});
 
   useEffect(() => {
     supabase.rpc("is_platform_admin").then(async ({ data }) => {
       setAllowed(!!data);
       if (!data) return;
-      const res = await supabase.rpc("platform_stats");
+      const [res, lw] = await Promise.all([supabase.rpc("platform_stats"), supabase.rpc("platform_stats_lawyers")]);
+      if (lw.data) setLawyers(lw.data as Record<string, number>);
       if (res.error) setError(res.error.message);
       else setStats(res.data as unknown as Stats);
     });
@@ -84,7 +86,7 @@ function Platform() {
   const fmtDate = (d: string) => new Date(d).toLocaleDateString(ar ? "ar-SA" : "en-GB");
   const c = stats.contracts;
 
-  const tiles: { label: string; value: number; to?: "/app/review" }[] = [
+  const tiles: { label: string; value: number; to?: "/app/review" | "/app/lawyers" }[] = [
     { label: ar ? "إجمالي المستخدمين" : "Total users", value: stats.users_total },
     { label: ar ? "جدد (٧ أيام)" : "New (7d)", value: stats.users_7d },
     { label: ar ? "جدد (٣٠ يوماً)" : "New (30d)", value: stats.users_30d },
@@ -96,6 +98,7 @@ function Platform() {
     { label: ar ? "عقود قيد المراجعة" : "Contracts pending", value: c["pending_review"] ?? 0, to: "/app/review" },
     { label: ar ? "عقود معتمدة" : "Contracts approved", value: c["approved"] ?? 0, to: "/app/review" },
     { label: ar ? "عقود مرفوضة" : "Contracts rejected", value: c["rejected"] ?? 0, to: "/app/review" },
+    { label: ar ? "طلبات توثيق محامين" : "Lawyer applications pending", value: lawyers["pending"] ?? 0, to: "/app/lawyers" },
   ];
 
   const types = Object.entries(stats.account_types).sort((a, b) => b[1] - a[1]);

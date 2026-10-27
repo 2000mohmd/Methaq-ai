@@ -37,6 +37,7 @@ async function loadOwnLibrary(sb: SupabaseClient): Promise<Chunk[]> {
       ref: c.ref,
       text: c.text.slice(0, 3000),
       sourceUrl: (it["source_url"] as string | null) ?? null,
+      origin: "user" as const, // the caller's own notes: context only, never an official source
     })),
   );
 }

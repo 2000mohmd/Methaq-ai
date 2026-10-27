@@ -1,6 +1,7 @@
 // Server-only. One place that knows which LLM provider we call (OpenAI-compatible chat/completions).
 // Own key (AI_API_KEY / ANTHROPIC_API_KEY) wins -> Anthropic by default. With no own key but LOVABLE_API_KEY
 // (running on Lovable), the Lovable AI gateway is used. Override anything with AI_BASE_URL / AI_MODEL.
+import { redactMessages, type RedactMap } from "@/lib/legal/redact";
 
 const env = (k: string) => process.env[k];
 const ownKey = () => env("AI_API_KEY") ?? env("ANTHROPIC_API_KEY");
@@ -21,10 +22,15 @@ export function aiHeaders(): Record<string, string> {
 
 export const AI_NOT_CONFIGURED = "AI is not configured on the server (set ANTHROPIC_API_KEY).";
 
-/** Never throws: with no key it returns a 503 Response so routes can report it cleanly. */
-export const aiFetch = async (body: Record<string, unknown>): Promise<Response> => {
+/**
+ * The jurisdiction boundary: the only call that sends text outside KSA. Every message text is PII-masked here
+ * (see legal/redact.ts); pass a map to restore() the model's reply with the user's own values afterwards.
+ * Never throws: with no key it returns a 503 Response so routes can report it cleanly.
+ */
+export const aiFetch = async (body: Record<string, unknown> & { messages?: unknown[] }, map: RedactMap = {}): Promise<Response> => {
   if (!ownKey() && !env("LOVABLE_API_KEY")) return new Response(AI_NOT_CONFIGURED, { status: 503 });
-  return fetch(url(), { method: "POST", headers: aiHeaders(), body: JSON.stringify({ model: model(), ...body }) });
+  const masked = body.messages ? { ...body, messages: redactMessages(body.messages, map) } : body;
+  return fetch(url(), { method: "POST", headers: aiHeaders(), body: JSON.stringify({ model: model(), ...masked }) });
 };
 
 /** Turns a failed provider response into a readable error for the user (never includes keys). */

@@ -24,9 +24,10 @@ const MODES = [
   { id: "drafting", en: "Drafting", ar: "صياغة" },
   { id: "contract review", en: "Contract review", ar: "مراجعة عقود" },
   { id: "due diligence", en: "Due diligence", ar: "العناية الواجبة" },
-  { id: "council", en: "High-stakes (council)", ar: "مجلس النماذج (حرج)" },
+  { id: "council", en: "Double-check (high-stakes)", ar: "تحقق مضاعف (مسائل مهمة)" },
 ];
-const JURIS = ["Saudi Arabia", "UAE", "Qatar", "Kuwait", "Bahrain", "Oman", "Egypt", "Jordan", "Lebanon"];
+// Saudi Arabia only — no other jurisdictions are offered.
+const JURIS = "Saudi Arabia";
 
 function ChatPage() {
   const { lang } = useI18n();
@@ -37,7 +38,6 @@ function ChatPage() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState("research");
-  const [juris, setJuris] = useState("Saudi Arabia");
   const [listOpen, setListOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -79,7 +79,7 @@ function ChatPage() {
       const { data: prof } = await supabase.from("profiles").select("organization_id").eq("id", uid).single();
       const { data: c, error } = await supabase
         .from("conversations")
-        .insert({ user_id: uid, title: content.slice(0, 60), jurisdiction: juris, organization_id: prof?.organization_id ?? null })
+        .insert({ user_id: uid, title: content.slice(0, 60), jurisdiction: JURIS, organization_id: prof?.organization_id ?? null })
         .select("id")
         .single();
       if (error) {
@@ -98,7 +98,7 @@ function ChatPage() {
     try {
       await streamAI(
         history,
-        { mode, jurisdiction: juris },
+        { mode, jurisdiction: JURIS },
         (d) => {
           acc += d;
           setMsgs([...history, { role: "assistant", content: acc }]);
@@ -158,10 +158,13 @@ function ChatPage() {
               {ar ? m.ar : m.en}
             </button>
           ))}
-          <select value={juris} onChange={(e) => setJuris(e.target.value)} className="ms-auto h-10 shrink-0 rounded-lg border border-border bg-background px-2 py-1 text-base md:h-auto md:text-xs">
-            {JURIS.map((j) => <option key={j}>{j}</option>)}
-          </select>
+          <span className="ms-auto shrink-0 whitespace-nowrap text-xs font-medium text-teal">{ar ? "المملكة العربية السعودية" : "Saudi Arabia"}</span>
         </div>
+        {mode === "drafting" && (
+          <p className="border-b border-border bg-teal/5 px-3 py-1.5 text-center text-xs text-navy md:px-4">
+            {ar ? "تُرسل المسودات إلى محامٍ مرخّص للمراجعة قبل تسليمها لك." : "Drafts are sent to a licensed lawyer for review before you receive them."}
+          </p>
+        )}
         <div className="flex-1 overflow-y-auto px-3 py-6 md:px-4">
           {msgs.length === 0 ? (
             <div className="mx-auto mt-6 max-w-xl text-center md:mt-16">

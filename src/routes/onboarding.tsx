@@ -12,6 +12,7 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { useI18n, type Lang, type Numerals } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { ConsentChecks, consentFields } from "./-consent";
 
 export const Route = createFileRoute("/onboarding")({
   component: Onboarding,
@@ -63,15 +64,26 @@ function Onboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [accountType, setAccountType] =
-    useState<(typeof ACCOUNT_TYPES)[number]["value"]>("law_firm");
+    useState<(typeof ACCOUNT_TYPES)[number]["value"]>("individual");
   const [firmName, setFirmName] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  // Google sign-in skips the sign-up form, so consent is collected here when it's missing.
+  const [needConsent, setNeedConsent] = useState(false);
+  const [agree, setAgree] = useState(false);
+  const [aiConsent, setAiConsent] = useState(false);
   const isIndividual = accountType === "individual";
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) navigate({ to: "/auth" });
+      const user = data.session?.user;
+      if (!user) {
+        navigate({ to: "/auth" });
+        return;
+      }
+      setAiConsent(user.user_metadata?.["ai_processing_consent"] === true);
+      supabase.from("profiles").select("consented_at").eq("id", user.id).maybeSingle()
+        .then(({ data: p }) => setNeedConsent(!p?.consented_at));
     });
   }, [navigate]);
 
@@ -118,11 +130,12 @@ function Onboarding() {
           language: lang,
           numerals,
           onboarded: true,
+          ...(needConsent ? consentFields(aiConsent) : {}),
         })
         .eq("id", user.id);
       if (profileError) throw profileError;
 
-      navigate({ to: "/app" });
+      navigate({ to: accountType === "lawyer" ? "/app/lawyer" : "/app" });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("common.error"));
     } finally {
@@ -261,6 +274,7 @@ function Onboarding() {
                     ))}
                   </div>
                 </div>
+                {needConsent && <ConsentChecks agree={agree} setAgree={setAgree} ai={aiConsent} setAi={setAiConsent} />}
               </div>
             )}
           </div>
@@ -276,7 +290,7 @@ function Onboarding() {
             {step < steps - 1 ? (
               <Button onClick={() => go(1)}>{t("onboarding.next")}</Button>
             ) : (
-              <Button variant="teal" onClick={finish} disabled={busy}>
+              <Button variant="teal" onClick={finish} disabled={busy || (needConsent && !agree)}>
                 {t("onboarding.finish")}
               </Button>
             )}

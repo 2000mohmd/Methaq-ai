@@ -1,24 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { C, F, R } from "../lib/theme";
 
 export const MODES = [
   { id: "research", ar: "بحث قانوني", icon: "search", desc: "إجابات مدعومة بالمصادر والمواد النظامية" },
-  { id: "drafting", ar: "صياغة", icon: "create", desc: "صياغة مسودات العقود والخطابات والبنود" },
+  { id: "drafting", ar: "صياغة", icon: "create", desc: "صياغة مسودات العقود والخطابات والبنود — تُرسل المسودة إلى محامٍ مرخّص لمراجعتها قبل إتاحتها في «مستنداتي»" },
   { id: "contract review", ar: "مراجعة عقود", icon: "document-text", desc: "تحليل البنود وتحديد المخاطر والملاحظات" },
   { id: "due diligence", ar: "العناية الواجبة", icon: "briefcase", desc: "فحص شامل للمستندات والالتزامات" },
-  { id: "council", ar: "مجلس النماذج", icon: "git-compare", desc: "عدة نماذج تتحقق من الإجابة — للمسائل الحرجة" },
+  { id: "council", ar: "تحقق مضاعف (مسائل مهمة)", icon: "git-compare", desc: "عدة نماذج تتحقق من الإجابة — للمسائل المهمة" },
 ] as const;
-
-// Values are what the API expects; labels are for display only.
-export const JURIS: Record<string, string> = {
-  "Saudi Arabia": "السعودية", UAE: "الإمارات", Qatar: "قطر", Kuwait: "الكويت", Bahrain: "البحرين",
-  Oman: "عُمان", Egypt: "مصر", Jordan: "الأردن", Lebanon: "لبنان",
-};
 
 type Props = {
   value: string;
@@ -27,11 +21,9 @@ type Props = {
   busy: boolean;
   mode: string;
   setMode: (m: string) => void;
-  juris: string;
-  setJuris: (j: string) => void;
 };
 
-export function ChatComposer({ value, onChange, onSend, busy, mode, setMode, juris, setJuris }: Props) {
+export function ChatComposer({ value, onChange, onSend, busy, mode, setMode }: Props) {
   const [sheet, setSheet] = useState(false);
   const insets = useSafeAreaInsets();
   const m = MODES.find((x) => x.id === mode) ?? MODES[0];
@@ -45,10 +37,10 @@ export function ChatComposer({ value, onChange, onSend, busy, mode, setMode, jur
           <Text style={chipText}>{m.ar}</Text>
           <Ionicons name="chevron-down" size={13} color={C.muted} />
         </Pressable>
-        <Pressable onPress={() => setSheet(true)} style={chip}>
+        <View style={chip}>
           <Ionicons name="globe-outline" size={14} color={C.teal} />
-          <Text style={chipText}>{JURIS[juris] ?? juris}</Text>
-        </Pressable>
+          <Text style={chipText}>المملكة العربية السعودية</Text>
+        </View>
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 8, backgroundColor: C.surface, borderRadius: 26, borderWidth: 1, borderColor: C.border, paddingStart: 16, paddingEnd: 5, paddingVertical: 5 }}>
@@ -104,17 +96,6 @@ export function ChatComposer({ value, onChange, onSend, busy, mode, setMode, jur
               </Pressable>
             );
           })}
-          <Text style={[sheetTitle, { marginTop: 16 }]}>الاختصاص القضائي</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
-            {Object.entries(JURIS).map(([v, label]) => {
-              const on = v === juris;
-              return (
-                <Pressable key={v} onPress={() => setJuris(v)} style={[chip, on && { borderColor: C.teal, backgroundColor: C.tealTint }]}>
-                  <Text style={[chipText, on && { color: C.teal, fontFamily: F.semibold }]}>{label}</Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
         </View>
       </Modal>
     </View>

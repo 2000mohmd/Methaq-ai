@@ -1,6 +1,6 @@
 // Run: node src/lib/legal/selfcheck.ts   (uses fake identifiers only; no real statute text)
 import assert from "node:assert/strict";
-import { chunkByArticle, councilDisagreement, expandReferences, rank, scoreRetrieval, validateGold, verifyAnswer, type Chunk, type GoldEntry } from "./legal.ts";
+import { chunkByArticle, councilDisagreement, expandReferences, rank, scoreRetrieval, sourceLabel, validateGold, verifyAnswer, type Chunk, type GoldEntry } from "./legal.ts";
 
 const parts = chunkByArticle("Preamble\nArticle 1\nalpha rule\nالمادة ٢\nbeta rule");
 assert.deepEqual(parts.map((p) => p.ref), ["", "1", "2"]);
@@ -69,4 +69,30 @@ assert.deepEqual(pickRegistry(reg, "ما مدة فترة التجربة في ع�
 assert.ok(!pickRegistry(reg, "what is the probation period in an employment contract").some((r) => r.priority_tier === "P4")); // drafts only when asked
 assert.ok(pickRegistry(reg, "any proposed draft law on labour consultation").some((r) => r.priority_tier === "P4"));
 assert.ok(pointersBlock(reg.slice(3, 4), false).includes("draft, NOT in force"));
+// User notes are context, not authority.
+const note: Chunk = { ...mk("1", "alpha note"), title: "MY-NOTE", origin: "user" };
+const onlyNotes = verifyAnswer("Based on my note [S1].", rank("alpha", [note]));
+assert.equal(onlyNotes.grounded, false); // grounded only in user notes != grounded
+assert.equal(onlyNotes.validCitations, 0);
+assert.ok(onlyNotes.text.includes("Your notes (not verified)") && !onlyNotes.text.includes("Verified sources"));
+const mixed = [{ ...mk("1", "alpha rule"), id: 1 }, { ...note, id: 2 }];
+const mv = verifyAnswer("Rule [S1] and note [S2].", mixed);
+assert.ok(mv.grounded && mv.validCitations === 1 && mv.text.includes("Verified sources:\n[S1]") && mv.text.includes("Your notes (not verified):\n[S2]"));
+assert.ok(sourceLabel(note).includes("USER NOTE") && !sourceLabel(mk("1", "x")).includes("USER NOTE"));
+assert.equal(parseAudit('[{"n":2,"risk":"high","issue":"x","basis":[1]}]', cl, rank("alpha", [note])).find((f) => f.n === 2)?.grounded, false);
+// PII masking at the AI boundary (fake values only).
+import { redact, redactFields, redactMessages, restore } from "./redact.ts";
+const pii = "ID 1000000001, iqama 2000000002, mobile 0500000000 / +966500000000, IBAN SA00 0000 0000 0000 0000 0000, mail test@example.invalid, card 4000 0000 0000 0000, سجل تجاري رقم 1010000000, again 1000000001";
+const r = redact(pii);
+for (const raw of ["1000000001", "2000000002", "0500000000", "966500000000", "SA00 0000", "test@example.invalid", "4000 0000", "1010000000"]) assert.ok(!r.text.includes(raw), raw);
+assert.ok(r.text.includes("⟦ID_1⟧") && r.text.includes("⟦ID_2⟧") && r.text.includes("⟦PHONE_1⟧") && r.text.includes("⟦IBAN_1⟧") && r.text.includes("⟦EMAIL_1⟧") && r.text.includes("⟦CR_1⟧"));
+assert.equal(r.text.match(/⟦ID_1⟧/g)?.length, 2); // same value -> same token
+assert.equal(restore(r.text, r.map), pii);
+assert.equal(redact("Article 74 of TEST-LAW, 1445 AH, SAR 50000").text, "Article 74 of TEST-LAW, 1445 AH, SAR 50000"); // ordinary numbers untouched
+const f = redactFields({ party_a_name: "TEST PERSON", party_a_id: "1000000001", party_a_addr: "TEST STREET", amount: "50000" });
+assert.equal(f.inputs["party_a_name"], "⟦PARTY_PARTY_A_NAME⟧");
+assert.equal(f.inputs["amount"], "50000");
+const fm = redactMessages([{ role: "user", content: "Contract between TEST PERSON (1000000001) of TEST STREET" }], f.map);
+assert.ok(!fm[0]!.content.includes("TEST PERSON") && !fm[0]!.content.includes("TEST STREET") && !fm[0]!.content.includes("1000000001"));
+assert.equal(restore(fm[0]!.content, f.map), "Contract between TEST PERSON (1000000001) of TEST STREET");
 console.log("legal selfcheck ok");

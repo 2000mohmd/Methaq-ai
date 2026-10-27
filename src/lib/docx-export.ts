@@ -45,7 +45,7 @@ function para(line: string, rtl: boolean): Paragraph {
   });
 }
 
-export function buildDocx(opts: { title: string; markdown: string; letterhead?: Letterhead; lang?: "ar" | "en"; date?: Date; logoPng?: Uint8Array }): Document {
+export function buildDocx(opts: { title: string; markdown: string; letterhead?: Letterhead; lang?: "ar" | "en"; date?: Date; logoPng?: Uint8Array; stamp?: string }): Document {
   const lang = opts.lang ?? (hasArabic(opts.markdown) ? "ar" : "en");
   const rtl = lang === "ar";
   const l = opts.letterhead ?? {};
@@ -81,6 +81,18 @@ export function buildDocx(opts: { title: string; markdown: string; letterhead?: 
 
   const body = opts.markdown.split("\n").filter((x) => x.trim()).map((line) => para(line, rtl && hasArabic(line) ? true : rtl));
 
+  // Reviewing lawyer's approval stamp, boxed at the end of the body.
+  const side = { style: BorderStyle.SINGLE, size: 8, color: "1F3A5F", space: 6 };
+  const stamp = opts.stamp
+    ? [new Paragraph({
+        alignment: AlignmentType.CENTER,
+        bidirectional: hasArabic(opts.stamp),
+        border: { top: side, bottom: side, left: side, right: side },
+        spacing: { before: 480 },
+        children: [new TextRun({ text: opts.stamp, bold: true, size: 22, font: FONT, rightToLeft: hasArabic(opts.stamp) })],
+      })]
+    : [];
+
   return new Document({
     title: opts.title,
     sections: [
@@ -91,7 +103,7 @@ export function buildDocx(opts: { title: string; markdown: string; letterhead?: 
             children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ children: [PageNumber.CURRENT, " / ", PageNumber.TOTAL_PAGES], size: 18, font: FONT })] })],
           }),
         },
-        children: [dateLine, ...body],
+        children: [dateLine, ...body, ...stamp],
       },
     ],
   });

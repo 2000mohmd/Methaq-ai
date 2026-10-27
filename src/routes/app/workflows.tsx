@@ -1,13 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import { Copy, FileSignature, Gavel, Loader2, Mail, ScrollText, ShieldAlert, Sparkles } from "lucide-react";
+import { CheckCircle2, FileSignature, Gavel, Loader2, Mail, ScrollText, ShieldAlert, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { streamAI } from "@/lib/ai-stream";
+import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
 
 export const Route = createFileRoute("/app/workflows")({
@@ -76,15 +75,13 @@ const WORKFLOWS: WF[] = [
   },
 ];
 
-const JURIS = ["Saudi Arabia", "UAE", "Egypt", "Qatar", "Kuwait", "Bahrain", "Oman", "Jordan", "Lebanon"];
-
 function Workflows() {
   const { lang } = useI18n();
   const ar = lang === "ar";
   const [active, setActive] = useState<WF>(WORKFLOWS[0]!);
   const [values, setValues] = useState<Record<string, string>>({});
-  const [juris, setJuris] = useState("Saudi Arabia");
-  const [out, setOut] = useState("");
+  // Documents are never shown straight to the user: they go to a licensed lawyer first (or are stamped by a verified lawyer-user).
+  const [sent, setSent] = useState<"pending_review" | "approved" | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function run() {
@@ -92,13 +89,21 @@ function Workflows() {
       toast.error(ar ? "أكمل جميع الحقول" : "Fill in all fields");
       return;
     }
-    setOut("");
+    setSent(null);
     setBusy(true);
     try {
-      const content = active.prompt(values) + (ar ? "\n\nRespond in Arabic." : "");
-      await streamAI([{ role: "user", content }], { mode: `workflow: ${active.en}`, jurisdiction: juris }, (d) =>
-        setOut((o) => o + d),
-      );
+      const prompt = `${active.prompt(values)}\nJurisdiction: Kingdom of Saudi Arabia.${ar ? "\n\nRespond in Arabic." : ""}`;
+      const subject = (values[active.inputs[0]!.key] ?? "").trim().slice(0, 60);
+      const title = `${ar ? active.ar : active.en}${subject ? ` — ${subject}` : ""}`;
+      const { data } = await supabase.auth.getSession();
+      const res = await fetch("/api/contracts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${data.session?.access_token}` },
+        body: JSON.stringify({ kind: "workflow", title, contract_type: active.id, language: ar ? "ar" : "en", inputs: values, prompt }),
+      });
+      if (!res.ok) throw new Error((await res.text()) || "AI error");
+      const json = (await res.json().catch(() => ({}))) as { status?: string };
+      setSent(json.status === "approved" ? "approved" : "pending_review");
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
@@ -117,7 +122,7 @@ function Workflows() {
         {WORKFLOWS.map((w) => (
           <button
             key={w.id}
-            onClick={() => { setActive(w); setValues({}); setOut(""); }}
+            onClick={() => { setActive(w); setValues({}); setSent(null); }}
             className={`rounded-2xl border p-4 text-start transition-colors ${active.id === w.id ? "border-teal bg-teal/5" : "border-border bg-card hover:border-teal/50"}`}
           >
             <w.icon className="size-5 text-teal" />
@@ -129,12 +134,7 @@ function Workflows() {
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
         <div className="grid content-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft sm:p-5">
-          <label className="grid gap-1 text-sm">
-            <span>{ar ? "الاختصاص" : "Jurisdiction"}</span>
-            <select className="h-10 rounded-lg border border-input bg-background px-3 text-base sm:text-sm" value={juris} onChange={(e) => setJuris(e.target.value)}>
-              {JURIS.map((j) => <option key={j}>{j}</option>)}
-            </select>
-          </label>
+          <p className="text-xs font-semibold text-teal">{ar ? "المملكة العربية السعودية" : "Kingdom of Saudi Arabia"}</p>
           {active.inputs.map((i) => (
             <label key={i.key} className="grid gap-1 text-sm">
               <span>{ar ? i.ar : i.en}</span>
@@ -151,19 +151,20 @@ function Workflows() {
         </div>
 
         <div className="min-h-64 rounded-2xl border border-border bg-card p-4 sm:p-6">
-          {out ? (
-            <>
-              <div className="mb-3 flex justify-end">
-                <Button size="sm" variant="ghost" className="h-10 sm:h-8" onClick={() => { navigator.clipboard.writeText(out); toast.success(ar ? "تم النسخ" : "Copied"); }}>
-                  <Copy className="size-4" /> {ar ? "نسخ" : "Copy"}
-                </Button>
-              </div>
-              <div className="break-words text-sm leading-relaxed [&_pre]:overflow-x-auto [&_table]:block [&_table]:overflow-x-auto [&_h1]:mt-4 [&_h1]:text-lg [&_h1]:font-semibold [&_h2]:mt-4 [&_h2]:font-semibold [&_h3]:mt-3 [&_h3]:font-semibold [&_li]:ms-5 [&_ol]:list-decimal [&_p]:my-2 [&_table]:my-3 [&_table]:w-full [&_td]:border [&_td]:border-border [&_td]:p-2 [&_th]:border [&_th]:border-border [&_th]:p-2 [&_ul]:list-disc">
-                <ReactMarkdown>{out}</ReactMarkdown>
-              </div>
-            </>
+          {busy ? (
+            <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> {ar ? "جارٍ إعداد المستند وإرساله للمراجعة…" : "Preparing the document and sending it for review…"}</p>
+          ) : sent ? (
+            <div className="grid gap-3 text-sm">
+              <p className="flex items-start gap-2 font-medium text-navy">
+                <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-teal" />
+                {sent === "approved"
+                  ? (ar ? "المستند جاهز ومعتمد باسمك في «مستنداتي»." : "The document is ready and approved under your name in My documents.")
+                  : (ar ? "أُرسل المستند إلى محامٍ مرخّص للمراجعة. ستتمكن من عرضه وتنزيله بعد اعتماده." : "Sent to a licensed lawyer for review. You can view and download it once approved.")}
+              </p>
+              <Button asChild variant="outline" className="h-10 w-fit"><Link to="/app/contracts">{ar ? "مستنداتي" : "My documents"}</Link></Button>
+            </div>
           ) : (
-            <p className="text-sm text-muted-foreground">{ar ? "ستظهر النتيجة هنا." : "The result will appear here."}</p>
+            <p className="text-sm text-muted-foreground">{ar ? "بعد التشغيل يُرسل المستند إلى محامٍ مرخّص للمراجعة، ثم يظهر في «مستنداتي» بعد اعتماده." : "After running, the document goes to a licensed lawyer for review and appears in My documents once approved."}</p>
           )}
           <p className="mt-6 text-xs text-muted-foreground italic">
             {ar ? "ميثاق ليس بديلاً عن محامٍ مرخّص." : "Mithaq is not a substitute for a licensed lawyer."}

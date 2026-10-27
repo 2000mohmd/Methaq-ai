@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, type ScrollViewInstance, Share, Text, TextInput, View } from "react-native";
 
 import { postJSON } from "../../lib/api";
+import { dualDate } from "../../lib/dates";
 import { shareDocx } from "../../lib/docx-export";
 import { loadLetterhead } from "../../lib/letterhead";
 import { supabase } from "../../lib/supabase";
@@ -21,8 +22,7 @@ type Template = {
 const DISPUTE: Field = {
   key: "dispute", en: "Dispute resolution", ar: "تسوية المنازعات",
   options: [
-    { v: "Saudi courts (competent court in the city of the contract)", en: "Saudi courts", ar: "المحاكم السعودية" },
-    { v: "Saudi Commercial Courts", en: "Commercial Courts", ar: "المحاكم التجارية" },
+    { v: "Saudi courts (competent court in the city of the contract)", en: "Saudi courts", ar: "المحاكم السعودية المختصة" },
     { v: "Arbitration under the Saudi Center for Commercial Arbitration (SCCA) rules, seat Riyadh", en: "SCCA arbitration", ar: "التحكيم - المركز السعودي للتحكيم التجاري" },
   ],
 };
@@ -100,14 +100,27 @@ const LANGS = [
   { v: "en", ar: "الإنجليزية" },
 ] as const;
 type OutLang = (typeof LANGS)[number]["v"];
+// Employment contracts: Arabic or bilingual only (the Arabic text is the one Qiwa / the labour courts rely on).
+const langsFor = (t: Template) => (t.id === "employment" ? LANGS.filter((l) => l.v !== "en") : LANGS);
 
 type Status = "pending_review" | "approved" | "rejected";
-// Clients can never read the AI draft (body) -- only the lawyer-approved text (per-instance review).
-const COLS = "id,title,contract_type,language,inputs,status,approved_body,review_note,reviewed_at,created_at,updated_at";
-type Saved = {
-  id: string; title: string; contract_type: string; inputs: Record<string, string>; language?: OutLang; created_at: string;
-  status: Status; approved_body: string | null; review_note: string | null;
+type Kind = "contract" | "workflow" | "chat_draft";
+const KIND: Record<Kind, { ar: string; icon: IconName }> = {
+  contract: { ar: "عقد", icon: "document-text-outline" },
+  workflow: { ar: "سير عمل", icon: "git-branch-outline" },
+  chat_draft: { ar: "مسودة من المحادثة", icon: "chatbubble-ellipses-outline" },
 };
+// Clients can never read the AI draft (body) -- only the lawyer-approved text (per-instance review).
+const COLS = "id,kind,title,contract_type,language,inputs,status,approved_body,review_note,reviewer_name,reviewer_licence,reviewed_at,created_at,updated_at";
+type Saved = {
+  id: string; kind: Kind | null; title: string; contract_type: string; inputs: Record<string, string> | null; language?: OutLang; created_at: string;
+  status: Status; approved_body: string | null; review_note: string | null;
+  reviewer_name: string | null; reviewer_licence: string | null; reviewed_at: string | null;
+};
+const stampOf = (sv: Saved) =>
+  sv.status === "approved" && sv.reviewer_name
+    ? `اعتمده: ${sv.reviewer_name} — ترخيص رقم ${sv.reviewer_licence ?? "—"} — ${dualDate(new Date(sv.reviewed_at ?? sv.created_at))}`
+    : "";
 const STATUS: Record<Status, { ar: string; color: string; icon: IconName }> = {
   pending_review: { ar: "قيد المراجعة", color: C.amber, icon: "time-outline" },
   approved: { ar: "معتمد", color: C.teal, icon: "checkmark-circle" },
@@ -159,7 +172,7 @@ export default function Screen() {
   const scroll = useRef<ScrollViewInstance>(null);
 
   async function load() {
-    const { data, error } = await supabase.from("contracts").select(COLS).order("created_at", { ascending: false }).limit(50);
+    const { data, error } = await supabase.from("contracts").select(COLS).is("hidden_at", null).order("created_at", { ascending: false }).limit(50);
     if (error) { Alert.alert("خطأ", error.message); return; }
     const rows = (data ?? []) as unknown as Saved[];
     setSaved(rows);
@@ -168,7 +181,11 @@ export default function Screen() {
   async function refresh() { setRefreshing(true); await load(); setRefreshing(false); }
   useEffect(() => { load(); }, []);
 
-  function pick(t: Template) { setTpl(t); setStep(0); setValues({}); setCur(null); }
+  function applyTemplate(t: Template) {
+    setTpl(t);
+    if (!langsFor(t).some((l) => l.v === outLang)) setOutLang("ar");
+  }
+  function pick(t: Template) { applyTemplate(t); setStep(0); setValues({}); setCur(null); }
   const set = (k: string, v: string) => setValues((x) => ({ ...x, [k]: v }));
 
   const last = step === tpl.steps.length;
@@ -192,19 +209,21 @@ ${details}`;
     const title = `${tpl.ar}${firstParty ? ` — ${firstParty}` : ""}`;
     try {
       // Server generates and stores the draft as pending lawyer review; only the id comes back.
-      await postJSON<{ id: string; status: Status }>("/api/contracts", { title, contract_type: tpl.id, language: outLang, inputs: values, prompt });
+      const res = await postJSON<{ id: string; status: Status }>("/api/contracts", { title, contract_type: tpl.id, language: outLang, inputs: values, prompt });
       success();
-      Alert.alert("تم الإرسال", "تم إرسال العقد إلى المحامي للمراجعة. ستتمكن من عرضه وتنزيله بعد اعتماده.");
+      // Verified lawyers' documents are approved immediately under their own name and licence.
+      if (res.status === "approved") Alert.alert("العقد جاهز", "تم اعتماد العقد باسمك ورقم ترخيصك. افتحه من «مستنداتي» لعرضه وتنزيله.");
+      else Alert.alert("تم الإرسال", "تم إرسال العقد إلى المحامي للمراجعة. ستتمكن من عرضه وتنزيله بعد اعتماده.");
       load();
     } catch (e) { Alert.alert("خطأ", (e as Error).message); }
     finally { setBusy(false); }
   }
 
   function remove(id: string) {
-    Alert.alert("حذف العقد؟", "", [
+    Alert.alert("حذف المستند من قائمتك؟", "سيختفي من «مستنداتي»، وتبقى النسخة المعتمدة محفوظة في سجلات المنصة.", [
       { text: "إلغاء", style: "cancel" },
       { text: "حذف", style: "destructive", onPress: async () => {
-        const { error } = await supabase.from("contracts").delete().eq("id", id);
+        const { error } = await supabase.rpc("hide_contract", { _id: id });
         if (error) { Alert.alert("خطأ", error.message); return; }
         setCur((c) => (c?.id === id ? null : c));
         load();
@@ -213,18 +232,23 @@ ${details}`;
   }
 
   function open(sv: Saved) {
-    const t = TEMPLATES.find((x) => x.id === sv.contract_type) ?? TEMPLATES[0]!;
-    setTpl(t); setValues(sv.inputs ?? {}); setCur(sv); setStep(t.steps.length);
+    // Only builder contracts refill the builder; workflow / chat drafts just open below.
+    const t = (sv.kind ?? "contract") === "contract" ? TEMPLATES.find((x) => x.id === sv.contract_type) : undefined;
+    if (t) { applyTemplate(t); setValues(sv.inputs ?? {}); setStep(t.steps.length); }
+    setCur(sv);
     if (sv.language) setOutLang(sv.language);
     scroll.current?.scrollTo({ y: 0, animated: true });
   }
 
   const approved = cur?.status === "approved" && cur.approved_body ? cur.approved_body : "";
+  const stamp = cur ? stampOf(cur) : "";
 
   async function exportWord() {
-    if (!approved) return;
+    if (!approved || !cur) return;
     try {
-      await shareDocx({ title: tpl.en, markdown: approved, letterhead: await loadLetterhead(), lang: outLang === "en" ? "en" : "ar" }, tpl.en.replace(/\s+/g, "-"));
+      const lang = cur.language === "en" ? "en" : "ar";
+      await shareDocx({ title: cur.title, markdown: approved, letterhead: await loadLetterhead(), lang, ...(stamp ? { stamp } : {}) },
+        cur.title.replace(/[\s/\\:*?"<>|]+/g, "-").slice(0, 80) || "document");
     } catch (e) { Alert.alert("خطأ", (e as Error).message); }
   }
 
@@ -286,7 +310,7 @@ ${details}`;
             <View style={{ gap: 8 }}>
               <FieldLabel>لغة العقد</FieldLabel>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {LANGS.map((o) => <Choice key={o.v} label={o.ar} active={outLang === o.v} onPress={() => setOutLang(o.v)} />)}
+                {langsFor(tpl).map((o) => <Choice key={o.v} label={o.ar} active={outLang === o.v} onPress={() => setOutLang(o.v)} />)}
               </View>
             </View>
             <Banner icon="information-circle-outline" color={C.navySoft} text="الحقول الفارغة ستظهر كفراغات [ ____ ] لتعبئتها لاحقاً." />
@@ -315,6 +339,12 @@ ${details}`;
             </View>
             {approved ? (
               <>
+                {!!stamp && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1.5, borderColor: C.teal, borderRadius: R.md, padding: 12, backgroundColor: C.tealTint }}>
+                    <Ionicons name="ribbon-outline" size={20} color={C.teal} />
+                    <Text style={{ flex: 1, fontFamily: F.semibold, fontSize: 13, lineHeight: 21, color: C.navy, textAlign: "left" }}>{stamp}</Text>
+                  </View>
+                )}
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <Button icon="share-outline" label="مشاركة النص" variant="outline" compact onPress={() => Share.share({ message: approved })} style={{ flex: 1 }} />
                   <Button icon="download-outline" label="Word (.docx)" compact onPress={exportWord} style={{ flex: 1 }} />
@@ -339,27 +369,29 @@ ${details}`;
         <Text style={[s.muted, { fontSize: 12 }]}>ميثاق ليس بديلاً عن محامٍ مرخّص. راجع العقد قبل التوقيع.</Text>
       </View>
 
-      <SectionTitle title="عقودي" right={saved.length ? <Pill label={String(saved.length)} color={C.navySoft} icon="documents-outline" /> : undefined} />
-      <Banner icon="shield-checkmark-outline" title="مراجعة محامٍ مرخّص لكل عقد"
-        text="يراجع محامٍ مرخّص كل عقد قبل إتاحته. لا يمكنك عرض العقد أو تنزيله إلا بعد اعتماده." />
+      <SectionTitle title="مستنداتي" right={saved.length ? <Pill label={String(saved.length)} color={C.navySoft} icon="documents-outline" /> : undefined} />
+      <Banner icon="shield-checkmark-outline" title="مراجعة محامٍ مرخّص لكل مستند"
+        text="يراجع محامٍ مرخّص كل عقد ومسودة قبل إتاحتها. لا يمكنك عرض المستند أو تنزيله إلا بعد اعتماده." />
       {saved.length === 0 ? (
         <View style={[s.card, { alignItems: "center", gap: 10, paddingVertical: 28 }]}>
           <IconTile icon="folder-open-outline" size={56} />
-          <Text style={s.muted}>لا توجد عقود محفوظة بعد.</Text>
+          <Text style={s.muted}>لا توجد مستندات محفوظة بعد.</Text>
         </View>
       ) : (
         <View style={{ gap: 10 }}>
           {saved.map((sv) => {
             const st = STATUS[sv.status] ?? STATUS.pending_review;
-            const t = TEMPLATES.find((x) => x.id === sv.contract_type);
+            const k = KIND[sv.kind ?? "contract"] ?? KIND.contract;
+            const t = sv.kind === "contract" || !sv.kind ? TEMPLATES.find((x) => x.id === sv.contract_type) : undefined;
             return (
               <View key={sv.id} style={[s.card, { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingEnd: 8 },
                 cur?.id === sv.id && { borderWidth: 1.5, borderColor: C.teal }]}>
                 <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12 }} onPress={() => { tap(); open(sv); }}>
-                  <IconTile icon={t?.icon ?? "document-text-outline"} color={st.color} size={44} />
+                  <IconTile icon={t?.icon ?? k.icon} color={st.color} size={44} />
                   <View style={{ flex: 1, gap: 6 }}>
                     <Text style={{ fontFamily: F.semibold, fontSize: 15, color: C.navy, textAlign: "left" }} numberOfLines={1}>{sv.title}</Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <Pill label={k.ar} color={C.navySoft} icon={k.icon} />
                       <Badge status={sv.status} />
                       <Text style={[s.muted, { fontSize: 12 }]}>{new Date(sv.created_at).toLocaleDateString("ar-SA")}</Text>
                     </View>

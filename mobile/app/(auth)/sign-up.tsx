@@ -7,6 +7,7 @@ import {
   AccountTypePicker,
   type AccountType,
   AuthScreen,
+  ConsentChecks,
   type InputRef,
   ErrorNote,
   Field,
@@ -26,6 +27,8 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [accountType, setAccountType] = useState<AccountType>("individual");
   const [firmName, setFirmName] = useState("");
+  const [terms, setTerms] = useState(false);
+  const [aiConsent, setAiConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
@@ -39,14 +42,20 @@ export default function SignUp() {
     if (!isEmail(email)) return fail("أدخل بريداً إلكترونياً صحيحاً.");
     if (password.length < 8) return fail("كلمة المرور يجب أن تكون 8 أحرف على الأقل.");
     if (!isIndividual && !firmName.trim()) return fail("أدخل اسم المكتب أو مساحة العمل.");
+    if (!terms) return fail("يجب الموافقة على شروط الاستخدام وسياسة الخصوصية.");
     setError(null);
     setBusy(true);
-    // Account choices ride in user metadata; app/onboarding.tsx completes the
-    // same writes as the website as soon as there is a session (now, or after email confirmation).
+    // Account choices + consent ride in user metadata; app/onboarding.tsx writes them to profiles
+    // (same writes as the website) as soon as there is a session (now, or after email confirmation).
     const { data, error: e } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { full_name: fullName.trim(), account_type: accountType, firm_name: isIndividual ? null : firmName.trim() } },
+      options: {
+        data: {
+          full_name: fullName.trim(), account_type: accountType, firm_name: isIndividual ? null : firmName.trim(),
+          consented_at: new Date().toISOString(), ai_processing_consent: aiConsent,
+        },
+      },
     });
     setBusy(false);
     if (e) return fail(arabicError(e));
@@ -125,8 +134,9 @@ export default function SignUp() {
         />
       )}
 
+      <ConsentChecks terms={terms} ai={aiConsent} onTerms={setTerms} onAi={setAiConsent} />
       <ErrorNote text={error} />
-      <PrimaryButton label="إنشاء الحساب" onPress={submit} busy={busy} />
+      <PrimaryButton label="إنشاء الحساب" onPress={submit} busy={busy} disabled={!terms} />
       <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 4 }}>
         <Text style={{ fontFamily: F.regular, fontSize: 14, color: C.muted }}>لديك حساب؟</Text>
         <LinkButton label="سجّل الدخول" onPress={() => router.replace("/sign-in")} />

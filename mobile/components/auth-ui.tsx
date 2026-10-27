@@ -2,11 +2,12 @@ import { Ionicons } from "@expo/vector-icons";
 import type { User } from "@supabase/supabase-js";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { type Href, useRouter } from "expo-router";
 import { type ComponentProps, type ComponentRef, type ReactNode, type Ref, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -18,7 +19,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { supabase } from "../lib/supabase";
+import { API_URL, supabase } from "../lib/supabase";
 import { C, F, R, shadow } from "../lib/theme";
 import { BrandMark, BrandPattern } from "./brand-mark";
 
@@ -33,14 +34,32 @@ export const ACCOUNT_TYPES = [
 export type AccountType = (typeof ACCOUNT_TYPES)[number]["value"];
 export const isAccountType = (v: unknown): v is AccountType => ACCOUNT_TYPES.some((t) => t.value === v);
 
-/** Root layout registers this so finishing onboarding releases the route guard. */
-export const onboardingSignal = { done: () => {} };
+/**
+ * Root layout registers `done` so finishing onboarding releases the route guard;
+ * `next` is where the guard sends the user afterwards (lawyers → licence verification).
+ */
+export const onboardingSignal: { done: () => void; next: Href | null } = { done: () => {}, next: null };
+
+// ---------- consent (profiles.terms_version / privacy_version / consented_at / ai_processing_consent) ----------
+
+export const CONSENT_VERSION = "2026-10-draft";
+export type Consent = { at: string; ai: boolean };
+const consentColumns = (c: Consent) => ({
+  terms_version: CONSENT_VERSION, privacy_version: CONSENT_VERSION, consented_at: c.at, ai_processing_consent: c.ai,
+});
+
+/** For already-onboarded profiles that predate the consent columns. */
+export async function saveConsent(userId: string, c: Consent) {
+  const { error } = await supabase.from("profiles").update(consentColumns(c)).eq("id", userId);
+  if (error) throw error;
+  onboardingSignal.done();
+}
 
 /**
  * Same writes as the website: individuals → profile only; everyone else →
  * organization + owner role + profile, then onboarded:true.
  */
-export async function completeOnboarding(user: User, accountType: AccountType, firmName: string) {
+export async function completeOnboarding(user: User, accountType: AccountType, firmName: string, consent: Consent) {
   // ponytail: Saudi-first app, so jurisdictions default to KSA instead of the website's picker step.
   const jurisdictions = ["Saudi Arabia"];
   let orgId: string | null = null;
@@ -65,9 +84,10 @@ export async function completeOnboarding(user: User, accountType: AccountType, f
   }
   const { error } = await supabase
     .from("profiles")
-    .update({ organization_id: orgId, account_type: accountType, jurisdictions, language: "ar", onboarded: true })
+    .update({ organization_id: orgId, account_type: accountType, jurisdictions, language: "ar", onboarded: true, ...consentColumns(consent) })
     .eq("id", user.id);
   if (error) throw error;
+  if (accountType === "lawyer") onboardingSignal.next = "/lawyer";
   onboardingSignal.done();
 }
 
@@ -160,13 +180,16 @@ export function Field({ label, icon, secret, style, ref, ...rest }: FieldProps) 
   );
 }
 
-export function PrimaryButton({ label, onPress, busy, tone = "teal" }: { label: string; onPress: () => void; busy?: boolean; tone?: "teal" | "navy" }) {
+export function PrimaryButton({ label, onPress, busy, disabled, tone = "teal" }: {
+  label: string; onPress: () => void; busy?: boolean; disabled?: boolean; tone?: "teal" | "navy";
+}) {
   return (
     <Pressable
       onPress={() => (tap(), onPress())}
-      disabled={busy}
+      disabled={busy || disabled}
       accessibilityRole="button"
-      style={({ pressed }) => [ui.primary, { backgroundColor: tone === "teal" ? C.teal : C.navy, opacity: pressed || busy ? 0.85 : 1 }]}
+      accessibilityState={{ disabled: !!(busy || disabled), busy: !!busy }}
+      style={({ pressed }) => [ui.primary, { backgroundColor: tone === "teal" ? C.teal : C.navy, opacity: disabled ? 0.45 : pressed || busy ? 0.85 : 1 }]}
     >
       {busy ? <ActivityIndicator color="#fff" /> : <Text style={ui.primaryText}>{label}</Text>}
     </Pressable>
@@ -187,6 +210,37 @@ export function ErrorNote({ text }: { text: string | null }) {
     <View style={ui.error}>
       <Ionicons name="alert-circle" size={18} color={C.danger} />
       <Text style={ui.errorText}>{text}</Text>
+    </View>
+  );
+}
+
+export function Checkbox({ checked, onChange, children }: { checked: boolean; onChange: (v: boolean) => void; children: ReactNode }) {
+  return (
+    <Pressable
+      onPress={() => (Haptics.selectionAsync().catch(() => {}), onChange(!checked))}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      style={{ flexDirection: "row", alignItems: "flex-start", gap: 10, minHeight: 44, paddingVertical: 4 }}
+    >
+      <View style={[ui.box, checked && ui.boxOn]}>{checked && <Ionicons name="checkmark" size={16} color="#fff" />}</View>
+      <Text style={ui.checkText}>{children}</Text>
+    </Pressable>
+  );
+}
+
+/** Required terms/privacy consent + optional consent to out-of-Kingdom AI processing (after PII masking). */
+export function ConsentChecks({ terms, ai, onTerms, onAi }: { terms: boolean; ai: boolean; onTerms: (v: boolean) => void; onAi: (v: boolean) => void }) {
+  const link = (label: string, path: string) => (
+    <Text style={ui.link} onPress={() => Linking.openURL(API_URL + path)} accessibilityRole="link">{label}</Text>
+  );
+  return (
+    <View style={{ gap: 4 }}>
+      <Checkbox checked={terms} onChange={onTerms}>
+        أوافق على {link("شروط الاستخدام", "/terms")} و{link("سياسة الخصوصية", "/privacy")}
+      </Checkbox>
+      <Checkbox checked={ai} onChange={onAi}>
+        أوافق على معالجة بياناتي بواسطة مزوّد ذكاء اصطناعي خارج المملكة بعد إخفاء البيانات الشخصية <Text style={{ color: C.muted }}>(اختياري)</Text>
+      </Checkbox>
     </View>
   );
 }
@@ -244,5 +298,9 @@ const ui = StyleSheet.create({
   optionOn: { borderColor: C.teal, backgroundColor: C.tealTint },
   optionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: C.navyTint },
   optionLabel: { fontFamily: F.semibold, fontSize: 15, color: C.navy, textAlign: "left" },
+  box: { width: 24, height: 24, borderRadius: 7, borderWidth: 1.5, borderColor: C.border, backgroundColor: C.bg, alignItems: "center", justifyContent: "center", marginTop: 1 },
+  boxOn: { borderColor: C.teal, backgroundColor: C.teal },
+  checkText: { flex: 1, fontFamily: F.regular, fontSize: 14, lineHeight: 23, color: C.fg, textAlign: "left" },
+  link: { fontFamily: F.semibold, color: C.teal, textDecorationLine: "underline" },
   optionHint: { fontFamily: F.regular, fontSize: 12.5, color: C.muted, textAlign: "left", marginTop: 1 },
 });

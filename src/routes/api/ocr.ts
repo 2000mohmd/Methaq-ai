@@ -25,6 +25,9 @@ export const Route = createFileRoute("/api/ocr")({
 
         await sb.from("audit_logs").insert({ user_id: u.user.id, action: "ai.ocr", resource: "documents", metadata: { pages: images.length } });
 
+        // ponytail: page images go to the provider unmasked (PII inside a picture can't be regex-redacted), so this
+        // call crosses the KSA boundary with raw personal data. Upgrade: run OCR in-region (e.g. a KSA-hosted
+        // Tesseract/Document AI) and send only redacted text onward.
         const res = await aiFetch({
           messages: [
             {

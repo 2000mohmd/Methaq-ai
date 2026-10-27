@@ -47,6 +47,7 @@ export function parseAudit(raw: string, clauses: Clause[], sources: Source[]): F
     /* unparseable -> every clause reported as unaudited below */
   }
   const ids = new Set(sources.map((s) => s.id));
+  const official = new Set(sources.filter((s) => s.origin !== "user").map((s) => s.id));
   const byN = new Map<number, Finding>();
   for (const x of Array.isArray(arr) ? (arr as Record<string, unknown>[]) : []) {
     const n = Number(x["n"]);
@@ -59,7 +60,7 @@ export function parseAudit(raw: string, clauses: Clause[], sources: Source[]): F
       issue: String(x["issue"] ?? ""),
       redline: String(x["redline"] ?? ""),
       basis,
-      grounded: risk === "ok" || risk === "low" || basis.length > 0,
+      grounded: risk === "ok" || risk === "low" || basis.some((i) => official.has(i)), // a user note alone is not a basis
     });
   }
   return clauses.map(
