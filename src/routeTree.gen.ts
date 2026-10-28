@@ -22,6 +22,8 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminLawyersRouteImport } from './routes/admin/lawyers'
 import { Route as AdminReviewRouteImport } from './routes/admin/review'
+import { Route as AdminTeamRouteImport } from './routes/admin/team'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as ApiAuditRouteImport } from './routes/api/audit'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiContractsRouteImport } from './routes/api/contracts'
@@ -111,6 +113,16 @@ const AdminLawyersRoute = AdminLawyersRouteImport.update({
 const AdminReviewRoute = AdminReviewRouteImport.update({
   id: '/review',
   path: '/review',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTeamRoute = AdminTeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AdminRoute,
 } as any)
 const ApiAuditRoute = ApiAuditRouteImport.update({
@@ -252,6 +264,8 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/review': typeof AdminReviewRoute
+  '/admin/team': typeof AdminTeamRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/contracts': typeof ApiContractsRoute
@@ -290,6 +304,8 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/review': typeof AdminReviewRoute
+  '/admin/team': typeof AdminTeamRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/contracts': typeof ApiContractsRoute
@@ -331,6 +347,8 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/admin/lawyers': typeof AdminLawyersRoute
   '/admin/review': typeof AdminReviewRoute
+  '/admin/team': typeof AdminTeamRoute
+  '/admin/users': typeof AdminUsersRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/contracts': typeof ApiContractsRoute
@@ -373,6 +391,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin/lawyers'
     | '/admin/review'
+    | '/admin/team'
+    | '/admin/users'
     | '/api/audit'
     | '/api/chat'
     | '/api/contracts'
@@ -411,6 +431,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin/lawyers'
     | '/admin/review'
+    | '/admin/team'
+    | '/admin/users'
     | '/api/audit'
     | '/api/chat'
     | '/api/contracts'
@@ -451,6 +473,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/admin/lawyers'
     | '/admin/review'
+    | '/admin/team'
+    | '/admin/users'
     | '/api/audit'
     | '/api/chat'
     | '/api/contracts'
@@ -587,6 +611,20 @@ declare module '@tanstack/react-router' {
       path: '/review'
       fullPath: '/admin/review'
       preLoaderRoute: typeof AdminReviewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/team': {
+      id: '/admin/team'
+      path: '/team'
+      fullPath: '/admin/team'
+      preLoaderRoute: typeof AdminTeamRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/api/audit': {
@@ -770,12 +808,16 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminLawyersRoute: typeof AdminLawyersRoute
   AdminReviewRoute: typeof AdminReviewRoute
+  AdminTeamRoute: typeof AdminTeamRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminLawyersRoute: AdminLawyersRoute,
   AdminReviewRoute: AdminReviewRoute,
+  AdminTeamRoute: AdminTeamRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

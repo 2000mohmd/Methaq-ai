@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeftRight, BadgeCheck, BarChart3, LayoutGrid, LogOut, Scale } from "lucide-react";
+import { ArrowLeftRight, BadgeCheck, BarChart3, LayoutGrid, LogOut, Scale, UserCog, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { LogoLockup, LogoMark } from "@/components/brand/Logo";
@@ -20,6 +20,8 @@ const ITEMS = [
   { to: "/admin", en: "Analytics", ar: "التحليلات", icon: BarChart3, adminOnly: true },
   { to: "/admin/review", en: "Document review", ar: "مراجعة المستندات", icon: Scale, adminOnly: false },
   { to: "/admin/lawyers", en: "Lawyer approvals", ar: "توثيق المحامين", icon: BadgeCheck, adminOnly: true },
+  { to: "/admin/users", en: "Users", ar: "المستخدمون", icon: Users, adminOnly: true },
+  { to: "/admin/team", en: "Team & access", ar: "الفريق والصلاحيات", icon: UserCog, adminOnly: true },
 ] as const;
 
 function AdminShell() {
@@ -51,7 +53,7 @@ function AdminShell() {
 
   // Lawyers have no analytics: send them to the review queue.
   useEffect(() => {
-    if (role === "lawyer" && (pathname === "/admin" || pathname === "/admin/" || pathname.startsWith("/admin/lawyers"))) {
+    if (role === "lawyer" && !pathname.startsWith("/admin/review")) {
       navigate({ to: "/admin/review" });
     }
   }, [role, pathname, navigate]);

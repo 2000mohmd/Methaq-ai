@@ -2,7 +2,6 @@ import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tansta
 import { useEffect, useState } from "react";
 import {
   BadgeCheck,
-  BarChart3,
   Bell,
   Coins,
   FileSearch,
@@ -91,8 +90,6 @@ const INDIVIDUAL_GROUPS = [
   },
 ] as const;
 
-// Platform staff (platform_staff) get a link to the separate /admin panel.
-const ADMIN_ITEM = { to: "/admin", key: "app.groupReview", icon: BarChart3 } as const;
 // Lawyer accounts submit their licence for verification.
 const LAWYER_ITEM = { to: "/app/lawyer", key: "app.lawyerVerify", icon: BadgeCheck } as const;
 
@@ -103,7 +100,6 @@ function AppShell() {
   const [checking, setChecking] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [isStaff, setIsStaff] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -142,9 +138,7 @@ function AppShell() {
         .eq("user_id", user.id);
       const roles = (roleRows ?? []) as { role: string }[];
       if (roles.length > 0 && roles.every((r) => r.role === "client")) setIsClient(true);
-      const { data: staff } = await supabase.rpc("is_reviewer");
       if (!active) return;
-      setIsStaff(!!staff);
       setChecking(false);
     });
     return () => {
@@ -173,7 +167,8 @@ function AppShell() {
   const baseGroups = !isClient && profile?.account_type === "lawyer"
     ? roleGroups.map((g) => (g.label === "app.groupMore" ? { ...g, items: [LAWYER_ITEM, ...g.items] } : g))
     : roleGroups;
-  const groups = isStaff ? [...baseGroups, { label: "app.groupReview", items: [ADMIN_ITEM] }] : baseGroups;
+  // The platform admin panel (/admin) is deliberately not linked from the user app.
+  const groups = baseGroups;
   const navPages = (isClient ? groups.slice(1) : groups).flatMap((g) => g.items.map((i) => ({ to: i.to as string, label: t(i.key) })));
 
   if (checking) {

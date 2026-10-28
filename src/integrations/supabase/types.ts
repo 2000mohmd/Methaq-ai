@@ -918,6 +918,23 @@ export type Database = {
       }
       review_lawyer: { Args: { _user: string; _decision: string; _note: string }; Returns: undefined }
       delete_my_account: { Args: never; Returns: undefined }
+      admin_list_staff: {
+        Args: never
+        Returns: { user_id: string; email: string; role: string; name: string | null; licence_no: string | null; created_at: string; last_sign_in_at: string | null }[]
+      }
+      admin_upsert_staff: { Args: { _email: string; _role: string; _name: string; _licence: string }; Returns: string }
+      admin_remove_staff: { Args: { _user: string }; Returns: undefined }
+      admin_users: {
+        Args: { _search?: string; _limit?: number; _offset?: number }
+        Returns: {
+          user_id: string; email: string; full_name: string | null; account_type: string | null; organization: string | null
+          created_at: string; last_sign_in_at: string | null; email_confirmed: boolean; onboarded: boolean
+          consented_at: string | null; ai_consent: boolean; lawyer_status: string | null; staff_role: string | null
+          verified: boolean; verification_note: string | null; verified_at: string | null
+          conversations: number; documents: number; contracts: number; total: number
+        }[]
+      }
+      admin_verify_user: { Args: { _user: string; _verified: boolean; _note: string }; Returns: undefined }
       platform_stats_lawyers: { Args: never; Returns: Json }
       claim_invitations: { Args: never; Returns: number }
       current_org_id: { Args: never; Returns: string }
