@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useI18n } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { SPECIALTIES, STATUS } from "./-lawyer-shared";
+import { SPECIALTIES, STATUS } from "@/lib/lawyer-shared";
 
 export const Route = createFileRoute("/app/lawyer")({
   head: () => ({ meta: [{ title: "Lawyer verification — Mithaq" }] }),

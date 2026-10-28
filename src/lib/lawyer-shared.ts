@@ -1,4 +1,4 @@
-// Shared by /app/lawyer and /app/lawyers ("-" prefix keeps it out of the route tree).
+// Shared by /app/lawyer and /admin/lawyers.
 export const SPECIALTIES = [
   ["personal_status", "أحوال شخصية", "Personal status"],
   ["labour", "عمالي", "Labour"],

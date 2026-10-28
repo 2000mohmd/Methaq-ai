@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
@@ -18,6 +19,9 @@ import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SecurityRouteImport } from './routes/security'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminLawyersRouteImport } from './routes/admin/lawyers'
+import { Route as AdminReviewRouteImport } from './routes/admin/review'
 import { Route as ApiAuditRouteImport } from './routes/api/audit'
 import { Route as ApiChatRouteImport } from './routes/api/chat'
 import { Route as ApiContractsRouteImport } from './routes/api/contracts'
@@ -35,13 +39,10 @@ import { Route as AppEmailsRouteImport } from './routes/app/emails'
 import { Route as AppHrRouteImport } from './routes/app/hr'
 import { Route as AppKycRouteImport } from './routes/app/kyc'
 import { Route as AppLawyerRouteImport } from './routes/app/lawyer'
-import { Route as AppLawyersRouteImport } from './routes/app/lawyers'
 import { Route as AppLeadsRouteImport } from './routes/app/leads'
 import { Route as AppLibraryRouteImport } from './routes/app/library'
 import { Route as AppMattersRouteImport } from './routes/app/matters'
-import { Route as AppPlatformRouteImport } from './routes/app/platform'
 import { Route as AppPortalRouteImport } from './routes/app/portal'
-import { Route as AppReviewRouteImport } from './routes/app/review'
 import { Route as AppSettingsRouteImport } from './routes/app/settings'
 import { Route as AppTasksRouteImport } from './routes/app/tasks'
 import { Route as AppTimeRouteImport } from './routes/app/time'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -91,6 +97,21 @@ const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLawyersRoute = AdminLawyersRouteImport.update({
+  id: '/lawyers',
+  path: '/lawyers',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminReviewRoute = AdminReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ApiAuditRoute = ApiAuditRouteImport.update({
   id: '/api/audit',
@@ -177,11 +198,6 @@ const AppLawyerRoute = AppLawyerRouteImport.update({
   path: '/lawyer',
   getParentRoute: () => AppRoute,
 } as any)
-const AppLawyersRoute = AppLawyersRouteImport.update({
-  id: '/lawyers',
-  path: '/lawyers',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppLeadsRoute = AppLeadsRouteImport.update({
   id: '/leads',
   path: '/leads',
@@ -197,19 +213,9 @@ const AppMattersRoute = AppMattersRouteImport.update({
   path: '/matters',
   getParentRoute: () => AppRoute,
 } as any)
-const AppPlatformRoute = AppPlatformRouteImport.update({
-  id: '/platform',
-  path: '/platform',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppPortalRoute = AppPortalRouteImport.update({
   id: '/portal',
   path: '/portal',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppReviewRoute = AppReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -236,6 +242,7 @@ const AppWorkflowsRoute = AppWorkflowsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
@@ -243,6 +250,8 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/admin/lawyers': typeof AdminLawyersRoute
+  '/admin/review': typeof AdminReviewRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/contracts': typeof ApiContractsRoute
@@ -259,17 +268,15 @@ export interface FileRoutesByFullPath {
   '/app/hr': typeof AppHrRoute
   '/app/kyc': typeof AppKycRoute
   '/app/lawyer': typeof AppLawyerRoute
-  '/app/lawyers': typeof AppLawyersRoute
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
-  '/app/platform': typeof AppPlatformRoute
   '/app/portal': typeof AppPortalRoute
-  '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
   '/app/workflows': typeof AppWorkflowsRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -281,6 +288,8 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/admin/lawyers': typeof AdminLawyersRoute
+  '/admin/review': typeof AdminReviewRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/contracts': typeof ApiContractsRoute
@@ -297,23 +306,22 @@ export interface FileRoutesByTo {
   '/app/hr': typeof AppHrRoute
   '/app/kyc': typeof AppKycRoute
   '/app/lawyer': typeof AppLawyerRoute
-  '/app/lawyers': typeof AppLawyersRoute
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
-  '/app/platform': typeof AppPlatformRoute
   '/app/portal': typeof AppPortalRoute
-  '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
   '/app/workflows': typeof AppWorkflowsRoute
+  '/admin': typeof AdminIndexRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRouteWithChildren
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
   '/onboarding': typeof OnboardingRoute
@@ -321,6 +329,8 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/security': typeof SecurityRoute
   '/terms': typeof TermsRoute
+  '/admin/lawyers': typeof AdminLawyersRoute
+  '/admin/review': typeof AdminReviewRoute
   '/api/audit': typeof ApiAuditRoute
   '/api/chat': typeof ApiChatRoute
   '/api/contracts': typeof ApiContractsRoute
@@ -337,17 +347,15 @@ export interface FileRoutesById {
   '/app/hr': typeof AppHrRoute
   '/app/kyc': typeof AppKycRoute
   '/app/lawyer': typeof AppLawyerRoute
-  '/app/lawyers': typeof AppLawyersRoute
   '/app/leads': typeof AppLeadsRoute
   '/app/library': typeof AppLibraryRoute
   '/app/matters': typeof AppMattersRoute
-  '/app/platform': typeof AppPlatformRoute
   '/app/portal': typeof AppPortalRoute
-  '/app/review': typeof AppReviewRoute
   '/app/settings': typeof AppSettingsRoute
   '/app/tasks': typeof AppTasksRoute
   '/app/time': typeof AppTimeRoute
   '/app/workflows': typeof AppWorkflowsRoute
+  '/admin/': typeof AdminIndexRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -355,6 +363,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/about'
+    | '/admin'
     | '/app'
     | '/auth'
     | '/onboarding'
@@ -362,6 +371,8 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/security'
     | '/terms'
+    | '/admin/lawyers'
+    | '/admin/review'
     | '/api/audit'
     | '/api/chat'
     | '/api/contracts'
@@ -378,17 +389,15 @@ export interface FileRouteTypes {
     | '/app/hr'
     | '/app/kyc'
     | '/app/lawyer'
-    | '/app/lawyers'
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
-    | '/app/platform'
     | '/app/portal'
-    | '/app/review'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
     | '/app/workflows'
+    | '/admin/'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -400,6 +409,8 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/security'
     | '/terms'
+    | '/admin/lawyers'
+    | '/admin/review'
     | '/api/audit'
     | '/api/chat'
     | '/api/contracts'
@@ -416,22 +427,21 @@ export interface FileRouteTypes {
     | '/app/hr'
     | '/app/kyc'
     | '/app/lawyer'
-    | '/app/lawyers'
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
-    | '/app/platform'
     | '/app/portal'
-    | '/app/review'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
     | '/app/workflows'
+    | '/admin'
     | '/app'
   id:
     | '__root__'
     | '/'
     | '/about'
+    | '/admin'
     | '/app'
     | '/auth'
     | '/onboarding'
@@ -439,6 +449,8 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/security'
     | '/terms'
+    | '/admin/lawyers'
+    | '/admin/review'
     | '/api/audit'
     | '/api/chat'
     | '/api/contracts'
@@ -455,23 +467,22 @@ export interface FileRouteTypes {
     | '/app/hr'
     | '/app/kyc'
     | '/app/lawyer'
-    | '/app/lawyers'
     | '/app/leads'
     | '/app/library'
     | '/app/matters'
-    | '/app/platform'
     | '/app/portal'
-    | '/app/review'
     | '/app/settings'
     | '/app/tasks'
     | '/app/time'
     | '/app/workflows'
+    | '/admin/'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
   OnboardingRoute: typeof OnboardingRoute
@@ -499,6 +510,13 @@ declare module '@tanstack/react-router' {
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/app': {
@@ -549,6 +567,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/lawyers': {
+      id: '/admin/lawyers'
+      path: '/lawyers'
+      fullPath: '/admin/lawyers'
+      preLoaderRoute: typeof AdminLawyersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/review': {
+      id: '/admin/review'
+      path: '/review'
+      fullPath: '/admin/review'
+      preLoaderRoute: typeof AdminReviewRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/api/audit': {
       id: '/api/audit'
@@ -669,13 +708,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLawyerRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/lawyers': {
-      id: '/app/lawyers'
-      path: '/lawyers'
-      fullPath: '/app/lawyers'
-      preLoaderRoute: typeof AppLawyersRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/leads': {
       id: '/app/leads'
       path: '/leads'
@@ -697,25 +729,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMattersRouteImport
       parentRoute: typeof AppRoute
     }
-    '/app/platform': {
-      id: '/app/platform'
-      path: '/platform'
-      fullPath: '/app/platform'
-      preLoaderRoute: typeof AppPlatformRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/app/portal': {
       id: '/app/portal'
       path: '/portal'
       fullPath: '/app/portal'
       preLoaderRoute: typeof AppPortalRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/app/review': {
-      id: '/app/review'
-      path: '/review'
-      fullPath: '/app/review'
-      preLoaderRoute: typeof AppReviewRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/settings': {
@@ -749,6 +767,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminLawyersRoute: typeof AdminLawyersRoute
+  AdminReviewRoute: typeof AdminReviewRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminLawyersRoute: AdminLawyersRoute,
+  AdminReviewRoute: AdminReviewRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppAuditRoute: typeof AppAuditRoute
@@ -762,13 +794,10 @@ interface AppRouteChildren {
   AppHrRoute: typeof AppHrRoute
   AppKycRoute: typeof AppKycRoute
   AppLawyerRoute: typeof AppLawyerRoute
-  AppLawyersRoute: typeof AppLawyersRoute
   AppLeadsRoute: typeof AppLeadsRoute
   AppLibraryRoute: typeof AppLibraryRoute
   AppMattersRoute: typeof AppMattersRoute
-  AppPlatformRoute: typeof AppPlatformRoute
   AppPortalRoute: typeof AppPortalRoute
-  AppReviewRoute: typeof AppReviewRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppTasksRoute: typeof AppTasksRoute
   AppTimeRoute: typeof AppTimeRoute
@@ -789,13 +818,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppHrRoute: AppHrRoute,
   AppKycRoute: AppKycRoute,
   AppLawyerRoute: AppLawyerRoute,
-  AppLawyersRoute: AppLawyersRoute,
   AppLeadsRoute: AppLeadsRoute,
   AppLibraryRoute: AppLibraryRoute,
   AppMattersRoute: AppMattersRoute,
-  AppPlatformRoute: AppPlatformRoute,
   AppPortalRoute: AppPortalRoute,
-  AppReviewRoute: AppReviewRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppTasksRoute: AppTasksRoute,
   AppTimeRoute: AppTimeRoute,
@@ -808,6 +834,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRouteWithChildren,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
   OnboardingRoute: OnboardingRoute,

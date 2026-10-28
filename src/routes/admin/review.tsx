@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useI18n } from "@/i18n";
 
-export const Route = createFileRoute("/app/review")({
+export const Route = createFileRoute("/admin/review")({
   head: () => ({ meta: [{ title: "Contract review — Mithaq" }] }),
   component: Review,
 });

@@ -7,7 +7,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/i18n";
 
-export const Route = createFileRoute("/app/platform")({
+export const Route = createFileRoute("/admin/")({
   head: () => ({ meta: [{ title: "Platform analytics — Mithaq" }] }),
   component: Platform,
 });
@@ -86,7 +86,7 @@ function Platform() {
   const fmtDate = (d: string) => new Date(d).toLocaleDateString(ar ? "ar-SA" : "en-GB");
   const c = stats.contracts;
 
-  const tiles: { label: string; value: number; to?: "/app/review" | "/app/lawyers" }[] = [
+  const tiles: { label: string; value: number; to?: "/admin/review" | "/admin/lawyers" }[] = [
     { label: ar ? "إجمالي المستخدمين" : "Total users", value: stats.users_total },
     { label: ar ? "جدد (٧ أيام)" : "New (7d)", value: stats.users_7d },
     { label: ar ? "جدد (٣٠ يوماً)" : "New (30d)", value: stats.users_30d },
@@ -95,10 +95,10 @@ function Platform() {
     { label: ar ? "المحادثات" : "Conversations", value: stats.conversations },
     { label: ar ? "الرسائل" : "Messages", value: stats.messages },
     { label: ar ? "المستندات" : "Documents", value: stats.documents },
-    { label: ar ? "عقود قيد المراجعة" : "Contracts pending", value: c["pending_review"] ?? 0, to: "/app/review" },
-    { label: ar ? "عقود معتمدة" : "Contracts approved", value: c["approved"] ?? 0, to: "/app/review" },
-    { label: ar ? "عقود مرفوضة" : "Contracts rejected", value: c["rejected"] ?? 0, to: "/app/review" },
-    { label: ar ? "طلبات توثيق محامين" : "Lawyer applications pending", value: lawyers["pending"] ?? 0, to: "/app/lawyers" },
+    { label: ar ? "عقود قيد المراجعة" : "Contracts pending", value: c["pending_review"] ?? 0, to: "/admin/review" },
+    { label: ar ? "عقود معتمدة" : "Contracts approved", value: c["approved"] ?? 0, to: "/admin/review" },
+    { label: ar ? "عقود مرفوضة" : "Contracts rejected", value: c["rejected"] ?? 0, to: "/admin/review" },
+    { label: ar ? "طلبات توثيق محامين" : "Lawyer applications pending", value: lawyers["pending"] ?? 0, to: "/admin/lawyers" },
   ];
 
   const types = Object.entries(stats.account_types).sort((a, b) => b[1] - a[1]);

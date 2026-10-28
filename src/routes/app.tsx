@@ -12,7 +12,6 @@ import {
   LibraryBig,
   Mail,
   MessageSquare,
-  Scale,
   Search,
   Settings,
   ShieldCheck,
@@ -92,11 +91,8 @@ const INDIVIDUAL_GROUPS = [
   },
 ] as const;
 
-// Platform staff (platform_staff) get the admin panel, whatever their account type:
-// admins see analytics + review, lawyers see review only.
-const PLATFORM_ITEM = { to: "/app/platform", key: "app.platform", icon: BarChart3 } as const;
-const REVIEW_ITEM = { to: "/app/review", key: "app.review", icon: Scale } as const;
-const LAWYERS_ITEM = { to: "/app/lawyers", key: "app.lawyers", icon: BadgeCheck } as const;
+// Platform staff (platform_staff) get a link to the separate /admin panel.
+const ADMIN_ITEM = { to: "/admin", key: "app.groupReview", icon: BarChart3 } as const;
 // Lawyer accounts submit their licence for verification.
 const LAWYER_ITEM = { to: "/app/lawyer", key: "app.lawyerVerify", icon: BadgeCheck } as const;
 
@@ -107,8 +103,7 @@ function AppShell() {
   const [checking, setChecking] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [isReviewer, setIsReviewer] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isStaff, setIsStaff] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -147,13 +142,9 @@ function AppShell() {
         .eq("user_id", user.id);
       const roles = (roleRows ?? []) as { role: string }[];
       if (roles.length > 0 && roles.every((r) => r.role === "client")) setIsClient(true);
-      const [{ data: reviewer }, { data: admin }] = await Promise.all([
-        supabase.rpc("is_reviewer"),
-        supabase.rpc("is_platform_admin"),
-      ]);
+      const { data: staff } = await supabase.rpc("is_reviewer");
       if (!active) return;
-      setIsReviewer(!!reviewer);
-      setIsAdmin(!!admin);
+      setIsStaff(!!staff);
       setChecking(false);
     });
     return () => {
@@ -164,7 +155,7 @@ function AppShell() {
   // Individuals can't open firm-management pages by typing the URL.
   const pathname = useLocation({ select: (l) => l.pathname });
   const individual = profile?.account_type === "individual";
-  const allowed = INDIVIDUAL_GROUPS[0].items.some((i) => pathname.startsWith(i.to)) || pathname.startsWith("/app/review") || pathname.startsWith("/app/platform") || pathname.startsWith("/app/lawyer") || pathname === "/app" || pathname === "/app/";
+  const allowed = INDIVIDUAL_GROUPS[0].items.some((i) => pathname.startsWith(i.to)) || pathname.startsWith("/app/lawyer") || pathname === "/app" || pathname === "/app/";
   useEffect(() => {
     if (!checking && individual && !allowed) navigate({ to: "/app/chat" });
   }, [checking, individual, allowed, navigate]);
@@ -182,8 +173,7 @@ function AppShell() {
   const baseGroups = !isClient && profile?.account_type === "lawyer"
     ? roleGroups.map((g) => (g.label === "app.groupMore" ? { ...g, items: [LAWYER_ITEM, ...g.items] } : g))
     : roleGroups;
-  const staffItems = [...(isAdmin ? [PLATFORM_ITEM, LAWYERS_ITEM] : []), ...(isReviewer ? [REVIEW_ITEM] : [])];
-  const groups = staffItems.length ? [...baseGroups, { label: "app.groupReview", items: staffItems }] : baseGroups;
+  const groups = isStaff ? [...baseGroups, { label: "app.groupReview", items: [ADMIN_ITEM] }] : baseGroups;
   const navPages = (isClient ? groups.slice(1) : groups).flatMap((g) => g.items.map((i) => ({ to: i.to as string, label: t(i.key) })));
 
   if (checking) {

@@ -9,9 +9,9 @@ import { useI18n } from "@/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { cn } from "@/lib/utils";
-import { SPECIALTIES, statusOf } from "./-lawyer-shared";
+import { SPECIALTIES, statusOf } from "@/lib/lawyer-shared";
 
-export const Route = createFileRoute("/app/lawyers")({
+export const Route = createFileRoute("/admin/lawyers")({
   head: () => ({ meta: [{ title: "Lawyer approvals — Mithaq" }] }),
   component: LawyerApprovals,
 });
